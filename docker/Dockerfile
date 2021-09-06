@@ -1,5 +1,6 @@
 #FROM alpine:latest
 FROM larjim/kademlialab:latest
+RUN apt update && apt install -y iputils-ping
 # Add the commands needed to put your compiled go binary in the container and
 # run it when the container starts.
 #
