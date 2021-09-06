@@ -2,6 +2,7 @@ package main
 
 // Importing packages
 import (
+	"d7024e"
     "fmt"
     "sort"
     "strings"
@@ -10,7 +11,7 @@ import (
   
 // Main function
 func main() {
-  
+	d7024e.network.SendPingMessage
     // Sorting the given slice
     s := []int{345, 78, 123, 10, 76, 2, 567, 5}
     sort.Ints(s)
