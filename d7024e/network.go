@@ -3,7 +3,7 @@ package d7024e
 import(
 	"net"
 	"fmt"
-	//"time"
+	"time"
 	"net/http"
 	//"os"
 
@@ -24,10 +24,12 @@ func NewNetwork() *Network {
 func Listen(ip string, port int) {
 	e := echo.New()
 	// TODO
+	fmt.Println("We are in the listening")
 	e.GET("/ping", func(c echo.Context) error {
+
 		return c.JSON(http.StatusOK, struct{ Status string }{Status: "OK"})
 	})
-
+	e.Start(":8080")
 	ln, err := net.Listen("tcp", "localhost:8080")
 	if err != nil {
 		// handle error
@@ -45,23 +47,23 @@ func Listen(ip string, port int) {
 func (network *Network) SendPingMessage(contact *Contact) {
 	// TODO
 	
-	conn, err := net.Dial("udp", contact.Address)
-	if err != nil {
+	/* conn, err1 := net.Dial("udp", contact.Address)
+	if err1 != nil {
 	}
-	fmt.Println("YES WE ARE HERE")
-	fmt.Fprintf(conn, "Hi UDP Server, How are you doing?")
+	fmt.Println("YES WE ARE PINGING")
+	fmt.Fprintf(conn, "Hi UDP Server, How are you doing?") */
 	
 	//status, err := bufio.NewReader(conn).ReadString('\n')
 	//status, err := bufio.NewReader(conn).ReadString('\n')
 
-    /* port := "80"
+    //port := "4000"
     timeout := time.Duration(1 * time.Second)
-    _, err := net.DialTimeout("tcp", contact.Address+":"+port, timeout)
+    _, err := net.DialTimeout("udp", contact.Address, timeout)
     if err != nil {
         fmt.Printf("%s %s %s\n", contact.Address, "not responding", err.Error())
     } else {
-        fmt.Printf("%s %s %s\n", contact.Address, "responding on port:", port)
-    } */
+        fmt.Printf("%s %s \n", "responding on adress:", contact.Address)
+    }
 }
 
 func (network *Network) SendFindContactMessage(contact *Contact) {

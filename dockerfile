@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 
 FROM golang:1.17-alpine
-
+#RUN apk update && apk add
+RUN apk update && apk add curl
 WORKDIR /app
 
 COPY go.mod ./
