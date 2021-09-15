@@ -13,7 +13,7 @@ import (
 // Main function
 func main() {
     
-    network := d7024e.NewNetwork()
+    
     //contact := d7024e.NewContact(d7024e.NewRandomKademliaID(), "google.com")
     conn,_ := net.Dial("ip:icmp","google.com")
     fmt.Println(conn.LocalAddr())
@@ -26,6 +26,8 @@ func main() {
         //network.SendPingMessage(&contact)
         rt := d7024e.NewRoutingTable(me)
         rt.AddContact(me)
+        network := d7024e.NewNetwork(&me, rt)
+        network.SendPingMessage(&me)
         //kademlia := d7024e.NewKademlia(*rt, *network)
         //kademlia.LookupContact(&me)
     } else {
@@ -35,7 +37,9 @@ func main() {
         //network.SendPingMessage(&contact)
         rt := d7024e.NewRoutingTable(me)
         rt.AddContact(known)
+        network := d7024e.NewNetwork(&me, rt)
         network.SendPingMessage(&known)
+        
         //kademlia := d7024e.NewKademlia(*rt, *network)
         //kademlia.LookupContact(&me)
     }

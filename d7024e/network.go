@@ -12,12 +12,15 @@ import(
 	
 )
 type Network struct {
-	//contact *Contact
+	contact *Contact
+	rt *RoutingTable
 }
 
 // NewRoutingTable returns a new instance of a RoutingTable
-func NewNetwork() *Network {
+func NewNetwork(contact *Contact, rt *RoutingTable) *Network {
 	network := &Network{}
+	network.contact = contact
+	network.rt = rt
 	return network
 }
 
@@ -26,7 +29,6 @@ func Listen(ip string, port int) {
 	// TODO
 	fmt.Println("We are in the listening")
 	e.GET("/ping", func(c echo.Context) error {
-
 		return c.JSON(http.StatusOK, struct{ Status string }{Status: "OK"})
 	})
 	e.Start(":8080")
@@ -58,7 +60,7 @@ func (network *Network) SendPingMessage(contact *Contact) {
 
     //port := "4000"
     timeout := time.Duration(1 * time.Second)
-    _, err := net.DialTimeout("udp", contact.Address, timeout)
+    _, err := net.DialTimeout("udp", contact.Address + "/ping", timeout)
     if err != nil {
         fmt.Printf("%s %s %s\n", contact.Address, "not responding", err.Error())
     } else {
