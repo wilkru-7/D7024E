@@ -27,7 +27,7 @@ func main() {
         rt := d7024e.NewRoutingTable(me)
         rt.AddContact(me)
         network := d7024e.NewNetwork(&me, rt)
-        network.SendPingMessage(&me)
+        go network.SendPingMessage(&me)
         //kademlia := d7024e.NewKademlia(*rt, *network)
         //kademlia.LookupContact(&me)
     } else {
@@ -38,12 +38,13 @@ func main() {
         rt := d7024e.NewRoutingTable(me)
         rt.AddContact(known)
         network := d7024e.NewNetwork(&me, rt)
-        network.SendPingMessage(&known)
+        go network.SendPingMessage(&known)
+        
         
         //kademlia := d7024e.NewKademlia(*rt, *network)
         //kademlia.LookupContact(&me)
     }
-    d7024e.Listen("127.0.0.1", 8080)
+    go d7024e.Listen("127.0.0.1", "8080")
     //network.contact = d7024e.NewContact(d7024e.NewRandomKademliaID(), "localhost:80")
     //network.SendPingMessage(&contact)
     //rt := d7024e.NewRoutingTable(me)

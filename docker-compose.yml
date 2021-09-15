@@ -25,12 +25,12 @@ services:
         window: 10s
 #    ports:
 #      - "8080:80"
-#    networks:
-#      - kademlia_network
+    networks:
+      - kademlia_network
       
 networks:
-  default:
-    external: true
-    name: kademlia_network
-#   kademlia_network:
+  #default:
+  #  external: true
+  #  name: kademlia_network
+   kademlia_network:
 
