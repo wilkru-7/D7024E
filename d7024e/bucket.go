@@ -2,7 +2,7 @@ package d7024e
 
 import (
 	"container/list"
-	"fmt"
+	//"fmt"
 )
 
 // bucket definition
@@ -21,7 +21,7 @@ func newBucket() *bucket {
 // AddContact adds the Contact to the front of the bucket
 // or moves it to the front of the bucket if it already existed
 func (bucket *bucket) AddContact(contact Contact) {
-	fmt.Println("before adding: " , bucket.list.Len())
+	//fmt.Println("before adding: " , bucket.list.Len())
 	var element *list.Element
 	for e := bucket.list.Front(); e != nil; e = e.Next() {
 		nodeID := e.Value.(Contact).ID
@@ -38,7 +38,7 @@ func (bucket *bucket) AddContact(contact Contact) {
 	} else {
 		bucket.list.MoveToFront(element)
 	}
-	fmt.Println("after adding : " , bucket.list.Len())
+	//fmt.Println("after adding : " , bucket.list.Len())
 }
 
 // GetContactAndCalcDistance returns an array of Contacts where 

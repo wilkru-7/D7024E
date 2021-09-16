@@ -60,13 +60,13 @@ func (network *Network) Listen(ip string, port string) {
 	if err1 != nil {
 		fmt.Println(err1)
 	}
-	fmt.Println("local address in listen : " , localAddress)
+	//fmt.Println("local address in listen : " , localAddress)
 
 	connection, err2 := net.ListenUDP("udp", localAddress)
 	if err2 != nil {
 		fmt.Println("error connection")
 	}
-	fmt.Println("connection in listen : " , connection)
+	//fmt.Println("connection in listen : " , connection)
 
 	defer connection.Close()
 
@@ -80,88 +80,52 @@ func (network *Network) Listen(ip string, port string) {
 		buffer = buffer[:length]
 		err = json.Unmarshal(buffer, &message)
 		if message.RPC == "ping" {
-			fmt.Println("ping")
+			fmt.Println("received ping from "+ message.SenderIP)
 			newContact := NewContact(NewKademliaID(message.ContactID), message.SenderIP)
 			network.rt.AddContact(newContact)
 			fmt.Println("new contact address: " + newContact.Address)
 			network.SendPongMessage(&newContact)
 		} else if message.RPC == "pong" {
-			fmt.Println("pong")
+			fmt.Println("received pong from "+ message.SenderIP)
 			newContact := NewContact(NewKademliaID(message.ContactID), message.SenderIP)
 			network.rt.AddContact(newContact)
+		} else if message.RPC == "FIND_NODE" {
+			fmt.Println("received FIND_NODE from "+ message.SenderIP)
+			k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.ContactID), 3)
+			//These contacts need to be returned to 
+			//kademlia file (maybe through channel??)
+
+		}
+		else if message.RPC == "FIND_NODE_RETURN" {
+			fmt.Println("received FIND_NODE_RETURN from "+ message.SenderIP)
+			k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.ContactID), 3)
 		}
 	}
-
 }
 
 func (network *Network) SendPingMessage(contact *Contact) {
-	// TODO
-	
-	/* conn, err1 := net.Dial("udp", contact.Address)
-	if err1 != nil {
-	}
-	fmt.Println("YES WE ARE PINGING")
-	fmt.Fprintf(conn, "Hi UDP Server, How are you doing?") */
-	
-	//status, err := bufio.NewReader(conn).ReadString('\n')
-	//status, err := bufio.NewReader(conn).ReadString('\n')
-
-    //port := "4000"
-
-    /*timeout := time.Duration(1 * time.Second)
-    _, err := net.DialTimeout("udp", contact.Address + "/ping", timeout)
-    if err != nil {
-        fmt.Printf("%s %s %s\n", contact.Address, "not responding", err.Error())
-    } else {
-        fmt.Printf("%s %s \n", "responding on adress:", contact.Address)
-    }*/
-
 	contactAddress, _ := net.ResolveUDPAddr("udp", contact.Address)
-	fmt.Println("contact address in ping : " , contactAddress)
+	fmt.Println("Sending ping to: " , contactAddress)
 	localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP()+":80")
-	fmt.Println("local address in ping : " , localAddress)
+	fmt.Println("Sending ping from: " , localAddress)
 	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
 	defer connection.Close()
 
-	message := &Message{}
-	message.SenderIP = network.contact.Address
-	message.ReceiverIP = contact.Address
-	message.RPC = "ping"
-	message.ContactID = contact.ID.String()
-	convMsg, err := json.Marshal(message)
+	convMsg := network.createRPC("ping", contact)
 	connection.Write(convMsg)
-	if err != nil {
-		fmt.Println("error in send ping")
-	}
-	//fmt.Println("send ping message")
-
-
 }
 
 
 func (network *Network) SendPongMessage(contact *Contact) {
-	// TODO
-
 	contactAddress, _ := net.ResolveUDPAddr("udp", contact.Address)
-	fmt.Println("contact address in pong : " , contactAddress)
+	fmt.Println("Sending pong to: " , contactAddress)
 	localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP()+":80")
-	fmt.Println("local address in pong : " , localAddress)
+	fmt.Println("Sending pong from: " , localAddress)
 	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
 	defer connection.Close()
 
-	message := &Message{}
-	message.SenderIP = network.contact.Address
-	message.ReceiverIP = contact.Address
-	message.RPC = "pong"
-	message.ContactID = contact.ID.String()
-	convMsg, err := json.Marshal(message)
+	convMsg := network.createRPC("pong", contact)
 	connection.Write(convMsg)
-	if err != nil {
-		fmt.Println("error in send pong")
-	}
-	//fmt.Println("send ping message")
-
-
 }
 
 func GetLocalIP() string {
@@ -183,8 +147,16 @@ func GetLocalIP() string {
 
 func (network *Network) SendFindContactMessage(contact *Contact) {
 	// TODO
+	contactAddress, _ := net.ResolveUDPAddr("udp", contact.Address)
+	fmt.Println("Sending FIND_NODE to: " , contactAddress)
+	localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP()+":80")
+	fmt.Println("Sending FIND_NODE from: " , localAddress)
+	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
+	defer connection.Close()
 
-	fmt.Println("Sending find contact message not implemented :( ")
+	convMsg := network.createRPC("FIND_NODE", contact)
+	connection.Write(convMsg)
+	//fmt.Println("Sending find contact message not implemented :( ")
 }
 
 func (network *Network) SendFindDataMessage(hash string) {
@@ -193,4 +165,21 @@ func (network *Network) SendFindDataMessage(hash string) {
 
 func (network *Network) SendStoreMessage(data []byte) {
 	// TODO
+}
+
+func (network *Network) createRPC(rpc string, contact *Contact) ([]byte){
+	/* SenderIP string
+	ReceiverIP string
+	RPC string
+	ContactID string */
+	message := &Message{}
+	message.SenderIP = network.contact.Address
+	message.ReceiverIP = contact.Address
+	message.RPC = rpc
+	message.ContactID = contact.ID.String()
+	convMsg, err := json.Marshal(message)
+	if err != nil{
+		fmt.Println("We got an error in createRPC")
+	}
+	return convMsg
 }
