@@ -1,6 +1,6 @@
 package d7024e
 
-//https://github.com/holwech/UDP-module/blob/master/UDPmodule.go
+//https://github.com/holwech/UDP-module/blob/e03eccee9bfb5585d2c27c7e153fef273285099c/communication.go#L15
 
 import(
 	"net"
@@ -23,6 +23,7 @@ type Message struct {
 	SenderIP string
 	ReceiverIP string
 	RPC string
+	ContactID string
 }
 
 // NewRoutingTable returns a new instance of a RoutingTable
@@ -33,7 +34,7 @@ func NewNetwork(contact *Contact, rt *RoutingTable) *Network {
 	return network
 }
 
-func Listen(ip string, port string) {
+func (network *Network) Listen(ip string, port string) {
 	/*e := echo.New()
 	// TODO
 	fmt.Println("We are in the listening")
@@ -54,34 +55,40 @@ func Listen(ip string, port string) {
 		//go handleConnection(conn)
 	}*/
 
-	fmt.Println("11111111")
 
-	localAddress, err1 := net.ResolveUDPAddr("udp", port)
+	localAddress, err1 := net.ResolveUDPAddr("udp", GetLocalIP()+":"+port)
 	if err1 != nil {
-		// handle error
+		fmt.Println(err1)
 	}
+	fmt.Println("local address in listen : " , localAddress)
 
 	connection, err2 := net.ListenUDP("udp", localAddress)
 	if err2 != nil {
-		// handle error
+		fmt.Println("error connection")
 	}
-
-	fmt.Println("22222222")
+	fmt.Println("connection in listen : " , connection)
 
 	defer connection.Close()
 
 	for {
-		fmt.Println("3333333")
 		var message Message
 		buffer := make([]byte, 4096)
 		length, _, err := connection.ReadFromUDP(buffer)
 		if err != nil {
-			// handle error
+			fmt.Println("error in listen")
 		}
 		buffer = buffer[:length]
 		err = json.Unmarshal(buffer, &message)
 		if message.RPC == "ping" {
-			fmt.Println("ping pong")
+			fmt.Println("ping")
+			newContact := NewContact(NewKademliaID(message.ContactID), message.SenderIP)
+			network.rt.AddContact(newContact)
+			fmt.Println("new contact address: " + newContact.Address)
+			network.SendPongMessage(&newContact)
+		} else if message.RPC == "pong" {
+			fmt.Println("pong")
+			newContact := NewContact(NewKademliaID(message.ContactID), message.SenderIP)
+			network.rt.AddContact(newContact)
 		}
 	}
 
@@ -109,24 +116,50 @@ func (network *Network) SendPingMessage(contact *Contact) {
         fmt.Printf("%s %s \n", "responding on adress:", contact.Address)
     }*/
 
-	fmt.Println("send ping message")
-
 	contactAddress, _ := net.ResolveUDPAddr("udp", contact.Address)
-	localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP())
+	fmt.Println("contact address in ping : " , contactAddress)
+	localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP()+":80")
+	fmt.Println("local address in ping : " , localAddress)
 	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
 	defer connection.Close()
 
-	for {
-		message := &Message{}
-		message.SenderIP = network.contact.Address
-		message.ReceiverIP = contact.Address
-		message.RPC = "ping"
-		convMsg, err := json.Marshal(message)
-		connection.Write(convMsg)
-		if err != nil {
-			// handle error
-		}
+	message := &Message{}
+	message.SenderIP = network.contact.Address
+	message.ReceiverIP = contact.Address
+	message.RPC = "ping"
+	message.ContactID = contact.ID.String()
+	convMsg, err := json.Marshal(message)
+	connection.Write(convMsg)
+	if err != nil {
+		fmt.Println("error in send ping")
 	}
+	//fmt.Println("send ping message")
+
+
+}
+
+
+func (network *Network) SendPongMessage(contact *Contact) {
+	// TODO
+
+	contactAddress, _ := net.ResolveUDPAddr("udp", contact.Address)
+	fmt.Println("contact address in pong : " , contactAddress)
+	localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP()+":80")
+	fmt.Println("local address in pong : " , localAddress)
+	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
+	defer connection.Close()
+
+	message := &Message{}
+	message.SenderIP = network.contact.Address
+	message.ReceiverIP = contact.Address
+	message.RPC = "pong"
+	message.ContactID = contact.ID.String()
+	convMsg, err := json.Marshal(message)
+	connection.Write(convMsg)
+	if err != nil {
+		fmt.Println("error in send pong")
+	}
+	//fmt.Println("send ping message")
 
 
 }
