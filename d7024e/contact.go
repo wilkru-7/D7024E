@@ -34,6 +34,9 @@ func (contact *Contact) String() string {
 	return fmt.Sprintf(`contact("%s", "%s")`, contact.ID, contact.Address)
 }
 
+func (contact *Contact) String2() string {
+	return fmt.Sprintf(`"%s","%s"`, contact.ID, contact.Address)
+}
 // ContactCandidates definition
 // stores an array of Contacts
 type ContactCandidates struct {

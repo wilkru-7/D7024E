@@ -28,7 +28,7 @@ func (kademlia *Kademlia) LookupContact(target *Contact) {
 		return
 	}
 	for _, contact := range closestContacts {
-		kademlia.net.SendFindContactMessage(&contact)
+		kademlia.net.SendFindContactMessage(&contact, *target.ID)
 		//Check if response
 			//then resend find_node to nodes learned about from previous RPC
 		// else remove from consideration until they respond

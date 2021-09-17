@@ -9,6 +9,7 @@ import(
 	//"net/http"
 	//"os"
 	"encoding/json"
+	"strings"
 
 	//"github.com/labstack/echo/v4"
 	//"github.com/labstack/echo/v4/middleware"
@@ -17,6 +18,7 @@ import(
 type Network struct {
 	contact *Contact
 	rt *RoutingTable
+	c chan []Contact
 }
 
 type Message struct {
@@ -24,13 +26,18 @@ type Message struct {
 	ReceiverIP string
 	RPC string
 	ContactID string
+	TargetID string
 }
-
+type triple struct {
+	IP string
+	ID string
+}
 // NewRoutingTable returns a new instance of a RoutingTable
 func NewNetwork(contact *Contact, rt *RoutingTable) *Network {
 	network := &Network{}
 	network.contact = contact
 	network.rt = rt
+	network.c = make(chan []Contact)
 	return network
 }
 
@@ -91,14 +98,25 @@ func (network *Network) Listen(ip string, port string) {
 			network.rt.AddContact(newContact)
 		} else if message.RPC == "FIND_NODE" {
 			fmt.Println("received FIND_NODE from "+ message.SenderIP)
-			k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.ContactID), 3)
+			k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.TargetID), 1)
+			var contacts string
+			for _, s := range k_contacts{
+				split := strings.Split(s.String2(),",")
+				fmt.Println("FIND_NODE found this contact: " , split[0])
+				contacts += s.String2() + ";"
+			}
+			fmt.Println("Contacts: ", contacts)
+			newContact := NewContact(NewKademliaID(message.ContactID), message.SenderIP)
+			fmt.Println(newContact)
+			// network.SendFindContactMessageReturn(&newContact, contacts)
 			//These contacts need to be returned to 
 			//kademlia file (maybe through channel??)
 
-		}
-		else if message.RPC == "FIND_NODE_RETURN" {
+		}else if message.RPC == "FIND_NODE_RETURN" {
 			fmt.Println("received FIND_NODE_RETURN from "+ message.SenderIP)
-			k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.ContactID), 3)
+			fmt.Println("received message "+ message.TargetID)
+			// k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.ContactID), 3)
+			// network.c <- k_contacts
 		}
 	}
 }
@@ -145,7 +163,7 @@ func GetLocalIP() string {
 	return localIP
 }
 
-func (network *Network) SendFindContactMessage(contact *Contact) {
+func (network *Network) SendFindContactMessage(contact *Contact, target KademliaID) {
 	// TODO
 	contactAddress, _ := net.ResolveUDPAddr("udp", contact.Address)
 	fmt.Println("Sending FIND_NODE to: " , contactAddress)
@@ -154,8 +172,28 @@ func (network *Network) SendFindContactMessage(contact *Contact) {
 	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
 	defer connection.Close()
 
-	convMsg := network.createRPC("FIND_NODE", contact)
+	convMsg := network.createRPCFindNode("FIND_NODE", contact, target.String())
 	connection.Write(convMsg)
+
+	contacts := <- network.c
+	fmt.Println("Received contacts on channel: ", contacts)
+	//fmt.Println("Sending find contact message not implemented :( ")
+}
+
+func (network *Network) SendFindContactMessageReturn(contact *Contact, result string) {
+	// TODO
+	contactAddress, _ := net.ResolveUDPAddr("udp", contact.Address)
+	fmt.Println("Sending FIND_NODE to: " , contactAddress)
+	localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP()+":80")
+	fmt.Println("Sending FIND_NODE from: " , localAddress)
+	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
+	defer connection.Close()
+
+	convMsg := network.createRPCFindNode("FIND_NODE_RETURN", contact, result)
+	connection.Write(convMsg)
+
+	// contacts := <- network.c
+	// fmt.Println("Received contacts on channel: ", contacts)
 	//fmt.Println("Sending find contact message not implemented :( ")
 }
 
@@ -177,6 +215,24 @@ func (network *Network) createRPC(rpc string, contact *Contact) ([]byte){
 	message.ReceiverIP = contact.Address
 	message.RPC = rpc
 	message.ContactID = contact.ID.String()
+	convMsg, err := json.Marshal(message)
+	if err != nil{
+		fmt.Println("We got an error in createRPC")
+	}
+	return convMsg
+}
+func (network *Network) createRPCFindNode(rpc string, contact *Contact, target string) ([]byte){
+	/* SenderIP string
+	ReceiverIP string
+	RPC string
+	ContactID string */
+	message := &Message{}
+	message.SenderIP = network.contact.Address
+	message.ReceiverIP = contact.Address
+	message.RPC = rpc
+	
+	message.ContactID = contact.ID.String()
+	message.TargetID = target
 	convMsg, err := json.Marshal(message)
 	if err != nil{
 		fmt.Println("We got an error in createRPC")
