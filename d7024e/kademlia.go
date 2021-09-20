@@ -34,16 +34,14 @@ func (kademlia *Kademlia) LookupContact(target *Contact) Contact{
 			visited = append(visited, contact)
 			var k_triples []Contact
 			k_triples = <- kademlia.net.c
-			for i, s := range k_triples{
-				fmt.Println("Inner foor loop: ", i)
-				fmt.Println("Contact from k_triple: ", s)
+			for _, s := range k_triples{
+				s.CalcDistance(target.ID)
 				shortlist = append(shortlist, s)
 				if(s.Less(&closestNode)){
 					closestNode = s
 				}
-				
 			}
-			fmt.Println("Contacts in LookupContact: ",k_triples)
+			/* fmt.Println("Contacts in LookupContact: ",k_triples) */
 			//Check if response
 				//then resend find_node to nodes learned about from previous RPC
 			// else remove from consideration until they respond
