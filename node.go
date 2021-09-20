@@ -38,15 +38,17 @@ func main() {
         //network.contact = d7024e.NewContact(d7024e.NewRandomKademliaID(), "localhost:80")
         //network.SendPingMessage(&contact)
         rt := d7024e.NewRoutingTable(me)
+        rt.AddContact(me)
         rt.AddContact(known)
         network := d7024e.NewNetwork(&me, rt)
         //go network.SendPingMessage(&known)
         //go network.SendFindContactMessage(&known)
+        
+        me.CalcDistance(me.ID)
+        fmt.Println("Distance is: ", me)
+        /* kademlia := d7024e.NewKademlia(*rt, network)
+        go kademlia.LookupContact(&me) */
         network.Listen("127.0.0.1", "8080")
-        
-        
-        //kademlia := d7024e.NewKademlia(*rt, *network)
-        //kademlia.LookupContact(&me)
         //time.Sleep(1 * time.Second)
     } else {
         known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000001"), "172.19.0.3:8080") 
@@ -55,11 +57,14 @@ func main() {
         //network.contact = d7024e.NewContact(d7024e.NewRandomKademliaID(), "localhost:80")
         //network.SendPingMessage(&contact)
         rt := d7024e.NewRoutingTable(me)
+        rt.AddContact(me)
         rt.AddContact(known)
         rt.AddContact(secondKnown)
         network := d7024e.NewNetwork(&me, rt)
         //go network.SendPingMessage(&known)
-        go network.SendFindContactMessage(&me, *d7024e.NewKademliaID("0000000000000000000000000000000000000009"))
+        /* go network.SendFindContactMessage(&me, *d7024e.NewKademliaID("0000000000000000000000000000000000000009")) */
+        kademlia := d7024e.NewKademlia(*rt, network)
+        go kademlia.LookupContact(&me)
         network.Listen("127.0.0.1", "8080")
         //time.Sleep(1 * time.Second)
     }

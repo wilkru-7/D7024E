@@ -5,11 +5,11 @@ import(
 )
 type Kademlia struct {
 	rt RoutingTable
-	net Network
+	net *Network
 	alpha int
 }
 
-func NewKademlia(rt RoutingTable, net Network) *Kademlia {
+func NewKademlia(rt RoutingTable, net *Network) *Kademlia {
 	kademlia := &Kademlia{}
 	kademlia.rt = rt
 	kademlia.alpha = 3
@@ -21,19 +21,37 @@ type Triple struct{
 	Port int
 	ID *KademliaID
 }
-func (kademlia *Kademlia) LookupContact(target *Contact) {
+func (kademlia *Kademlia) LookupContact(target *Contact) Contact{
 	// TODO
-	closestContacts := kademlia.rt.FindClosestContacts(target.ID, kademlia.alpha)
-	if len(closestContacts) == 0 {
-		return
+	shortlist := kademlia.rt.FindClosestContacts(target.ID, kademlia.alpha)
+	closestNode := shortlist[0]
+	var visited []Contact
+	fmt.Println("Closest node: ", closestNode)
+	for _, contact := range shortlist{
+		if(!contains(visited, contact)){
+			kademlia.net.SendPingMessage(&contact)
+			kademlia.net.SendFindContactMessage(&contact, *target)
+			visited = append(visited, contact)
+			var k_triples []Contact
+			k_triples = <- kademlia.net.c
+			for i, s := range k_triples{
+				fmt.Println("Inner foor loop: ", i)
+				fmt.Println("Contact from k_triple: ", s)
+				shortlist = append(shortlist, s)
+				if(s.Less(&closestNode)){
+					closestNode = s
+				}
+				
+			}
+			fmt.Println("Contacts in LookupContact: ",k_triples)
+			//Check if response
+				//then resend find_node to nodes learned about from previous RPC
+			// else remove from consideration until they respond
+		}
+		
 	}
-	for _, contact := range closestContacts {
-		kademlia.net.SendFindContactMessage(&contact, *target.ID)
-		//Check if response
-			//then resend find_node to nodes learned about from previous RPC
-		// else remove from consideration until they respond
-	}
-	fmt.Println("LookupContact is not implemented yet :(")
+	return closestNode
+	//fmt.Println("LookupContact is not implemented yet :(")
 }
 
 func (kademlia *Kademlia) LookupData(hash string) {
@@ -43,3 +61,12 @@ func (kademlia *Kademlia) LookupData(hash string) {
 func (kademlia *Kademlia) Store(data []byte) {
 	// TODO
 }
+
+func contains(visited []Contact, contact Contact) bool {
+	for _, a := range visited {
+	   if a.ID == contact.ID {
+		  return true
+	   }
+	}
+	return false
+ }

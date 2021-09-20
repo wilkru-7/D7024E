@@ -24,6 +24,7 @@ func NewRoutingTable(me Contact) *RoutingTable {
 func (routingTable *RoutingTable) AddContact(contact Contact) {
 	bucketIndex := routingTable.getBucketIndex(contact.ID)
 	bucket := routingTable.buckets[bucketIndex]
+	contact.CalcDistance(routingTable.me.ID)
 	bucket.AddContact(contact)
 }
 

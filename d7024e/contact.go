@@ -15,6 +15,7 @@ type Contact struct {
 
 // NewContact returns a new instance of a Contact
 func NewContact(id *KademliaID, address string) Contact {
+	
 	return Contact{id, address, nil}
 }
 
