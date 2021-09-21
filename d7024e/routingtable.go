@@ -1,8 +1,8 @@
 package d7024e
-/* import (
+import (
     "fmt"
-) */
-const bucketSize = 20
+) 
+const bucketSize = 3
 
 
 // RoutingTable definition
@@ -18,6 +18,7 @@ func NewRoutingTable(me Contact) *RoutingTable {
 	for i := 0; i < IDLength*8; i++ {
 		routingTable.buckets[i] = newBucket()
 	}
+	/* fmt.Println("buckets looks like: ", routingTable.buckets[0].Len()) */
 	routingTable.me = me
 	return routingTable
 }
@@ -70,4 +71,9 @@ func (routingTable *RoutingTable) getBucketIndex(id *KademliaID) int {
 	}
 
 	return IDLength*8 - 1
+}
+func (routingTable *RoutingTable) getLength(){
+	for _, bucket := range routingTable.buckets {
+		fmt.Println("bucket length: ",bucket.Len())
+	}
 }

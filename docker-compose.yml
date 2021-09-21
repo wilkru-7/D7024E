@@ -7,13 +7,35 @@
 
 version: "3"
 services:
+  rootNode:
+      image: kademlia # Make sure your Docker image has this name.
+      stdin_open: true
+      tty: true
+      deploy:
+        mode: replicated
+        replicas: 1
+  #        resources:
+  #           limits:
+  #              cpus: "0.1"
+  #              memory: 50M
+        restart_policy:
+          condition: on-failure
+          delay: 5s
+          max_attempts: 3
+          window: 10s
+  #    ports:
+  #      - "8080:80"
+      networks:
+        - kademlia_network
   kademliaNodes:
     image: kademlia # Make sure your Docker image has this name.
     stdin_open: true
     tty: true
+    depends_on: 
+      - rootNode
     deploy:
       mode: replicated
-      replicas: 3
+      replicas: 2
 #        resources:
 #           limits:
 #              cpus: "0.1"

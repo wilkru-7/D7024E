@@ -19,8 +19,11 @@ type Network struct {
 	contact *Contact
 	rt *RoutingTable
 	c chan []Contact
+	pongChannel chan string
+	data []Data
+	storeChannel chan string
+	
 }
-
 type Message struct {
 	Sender Contact
 	Receiver Contact
@@ -31,6 +34,8 @@ type Message struct {
 	TargetID string */
 	Target Contact
 	Contacts []Contact
+	key string
+	value string
 }
 type triple struct {
 	IP string
@@ -42,43 +47,22 @@ func NewNetwork(contact *Contact, rt *RoutingTable) *Network {
 	network.contact = contact
 	network.rt = rt
 	network.c = make(chan []Contact)
+	network.pongChannel = make(chan string)
+	network.storeChannel = make(chan string)
 	return network
 }
 
 func (network *Network) Listen(ip string, port string) {
-	/*e := echo.New()
-	// TODO
-	fmt.Println("We are in the listening")
-	e.GET("/ping", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, struct{ Status string }{Status: "OK"})
-	})
-	e.Start(":8080")
-	ln, err := net.Listen("tcp", "localhost:8080")
-	if err != nil {
-		// handle error
-	}
-	for {
-		//conn, err := ln.Accept()
-		_, err := ln.Accept()
-		if err != nil {
-			// handle error
-		}
-		//go handleConnection(conn)
-	}*/
-
-
 	localAddress, err1 := net.ResolveUDPAddr("udp", GetLocalIP()+":"+port)
 	if err1 != nil {
 		fmt.Println(err1)
 	}
-	//fmt.Println("local address in listen : " , localAddress)
+
 
 	connection, err2 := net.ListenUDP("udp", localAddress)
 	if err2 != nil {
 		fmt.Println("error connection")
 	}
-	//fmt.Println("connection in listen : " , connection)
-
 	defer connection.Close()
 
 	for {
@@ -97,14 +81,32 @@ func (network *Network) Listen(ip string, port string) {
 		} else if message.RPC == "pong" {
 			fmt.Println("received pong from "+ message.Sender.Address)
 			network.rt.AddContact(message.Sender)
+			network.pongChannel <- "pong"
 		} else if message.RPC == "FIND_NODE" {
 			fmt.Println("received FIND_NODE from "+ message.Sender.Address)
 			k_contacts := network.rt.FindClosestContacts(message.Target.ID, 3)
-			fmt.Println("Found these contacts: ", k_contacts)
+			/* fmt.Println("Found these contacts: ", k_contacts) */
 			network.SendFindContactMessageReturn(&message.Sender, k_contacts)
 		}else if message.RPC == "FIND_NODE_RETURN" {
 			fmt.Println("received FIND_NODE_RETURN from "+ message.Sender.Address)
 			network.c <- message.Contacts
+		}else if message.RPC == "STORE" {
+			fmt.Println("received STORE from "+ message.Sender.Address)
+			exist := false
+			for _, s := range network.data{
+				if s.key == message.key {
+					exist = true
+				}
+			}
+			if !exist{
+				data := Data{}
+				data.key = message.key
+				data.value = message.value
+				network.data = append(network.data, data)
+				network.SendStoreReturnMessage(&message.Sender)
+			}
+		}else if message.RPC =="STORE_RETURN"{
+			network.storeChannel <- "Store Completed"
 		}
 	}
 }
@@ -113,7 +115,7 @@ func (network *Network) SendPingMessage(contact *Contact) {
 	contactAddress, _ := net.ResolveUDPAddr("udp", contact.Address)
 	fmt.Println("Sending ping to: " , contactAddress)
 	localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP()+":80")
-	fmt.Println("Sending ping from: " , localAddress)
+	/* fmt.Println("Sending ping from: " , localAddress) */
 	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
 	defer connection.Close()
 
@@ -126,7 +128,7 @@ func (network *Network) SendPongMessage(contact *Contact) {
 	contactAddress, _ := net.ResolveUDPAddr("udp", contact.Address)
 	fmt.Println("Sending pong to: " , contactAddress)
 	localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP()+":80")
-	fmt.Println("Sending pong from: " , localAddress)
+	/* fmt.Println("Sending pong from: " , localAddress) */
 	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
 	defer connection.Close()
 
@@ -156,7 +158,7 @@ func (network *Network) SendFindContactMessage(contact *Contact, target Contact)
 	contactAddress, _ := net.ResolveUDPAddr("udp", contact.Address)
 	fmt.Println("Sending FIND_NODE to: " , contactAddress)
 	localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP()+":80")
-	fmt.Println("Sending FIND_NODE from: " , localAddress)
+	/* fmt.Println("Sending FIND_NODE from: " , localAddress) */
 	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
 	defer connection.Close()
 
@@ -171,9 +173,9 @@ func (network *Network) SendFindContactMessage(contact *Contact, target Contact)
 func (network *Network) SendFindContactMessageReturn(contact *Contact, result []Contact) {
 	// TODO
 	contactAddress, _ := net.ResolveUDPAddr("udp", contact.Address)
-	fmt.Println("Sending FIND_NODE to: " , contactAddress)
+	fmt.Println("Sending FIND_NODE_RETURN to: " , contactAddress)
 	localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP()+":80")
-	fmt.Println("Sending FIND_NODE from: " , localAddress)
+	/* fmt.Println("Sending FIND_NODE from: " , localAddress) */
 	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
 	defer connection.Close()
 
@@ -185,14 +187,34 @@ func (network *Network) SendFindContactMessageReturn(contact *Contact, result []
 	//fmt.Println("Sending find contact message not implemented :( ")
 }
 
-func (network *Network) SendFindDataMessage(hash string) {
+func (network *Network) SendFindDataMessage(contact *Contact, hash string) {
 	// TODO
 }
-
-func (network *Network) SendStoreMessage(data []byte) {
+//data []byte
+func (network *Network) SendStoreMessage(contact *Contact, key string, value string) {
 	// TODO
-}
+	contactAddress, _ := net.ResolveUDPAddr("udp", contact.Address)
+	fmt.Println("Sending STORE to: " , contactAddress)
+	localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP()+":80")
+	/* fmt.Println("Sending FIND_NODE from: " , localAddress) */
+	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
+	defer connection.Close()
 
+	convMsg := network.createRPCStore("STORE", contact, key, value)
+	connection.Write(convMsg)
+}
+func (network *Network) SendStoreReturnMessage(contact *Contact) {
+	// TODO
+	contactAddress, _ := net.ResolveUDPAddr("udp", contact.Address)
+	fmt.Println("Sending STORE to: " , contactAddress)
+	localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP()+":80")
+	/* fmt.Println("Sending FIND_NODE from: " , localAddress) */
+	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
+	defer connection.Close()
+
+	convMsg := network.createRPC("STORE_RETURN", contact)
+	connection.Write(convMsg)
+}
 func (network *Network) createRPC(rpc string, receiver *Contact) ([]byte){
 	/* SenderIP string
 	ReceiverIP string
@@ -234,6 +256,23 @@ func (network *Network) createRPCFindNodeReturn(rpc string, receiver *Contact, c
 	message.Receiver = *receiver
 	message.RPC = rpc
 	message.Contacts = contacts
+	convMsg, err := json.Marshal(message)
+	if err != nil{
+		fmt.Println("We got an error in createRPC")
+	}
+	return convMsg
+}
+func (network *Network) createRPCStore(rpc string, receiver *Contact, key string, value string) ([]byte){
+	/* SenderIP string
+	ReceiverIP string
+	RPC string
+	ContactID string */
+	message := &Message{}
+	message.Sender = *network.contact
+	message.Receiver = *receiver
+	message.RPC = rpc
+	message.key = key
+	message.value = value
 	convMsg, err := json.Marshal(message)
 	if err != nil{
 		fmt.Println("We got an error in createRPC")

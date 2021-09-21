@@ -7,6 +7,7 @@ type Kademlia struct {
 	rt RoutingTable
 	net *Network
 	alpha int
+	data []Data
 }
 
 func NewKademlia(rt RoutingTable, net *Network) *Kademlia {
@@ -21,48 +22,81 @@ type Triple struct{
 	Port int
 	ID *KademliaID
 }
-func (kademlia *Kademlia) LookupContact(target *Contact) Contact{
-	// TODO
-	shortlist := kademlia.rt.FindClosestContacts(target.ID, kademlia.alpha)
-	closestNode := shortlist[0]
+// Hej -> 0002102310023013021
+type Data struct{
+	key string
+	value string
+}
+
+func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
+	var shortlist ContactCandidates
+	shortlist.contacts = kademlia.rt.FindClosestContacts(target.ID, kademlia.alpha)
+	closestNode := shortlist.contacts[0]
 	var visited []Contact
-	fmt.Println("Closest node: ", closestNode)
-	for _, contact := range shortlist{
+	for _, contact := range shortlist.contacts {
 		if(!contains(visited, contact)){
 			kademlia.net.SendPingMessage(&contact)
-			kademlia.net.SendFindContactMessage(&contact, *target)
-			visited = append(visited, contact)
-			var k_triples []Contact
-			k_triples = <- kademlia.net.c
-			for _, s := range k_triples{
-				s.CalcDistance(target.ID)
-				shortlist = append(shortlist, s)
-				if(s.Less(&closestNode)){
-					closestNode = s
+			var pong string
+			pong = <- kademlia.net.pongChannel 
+			if(pong == "pong"){
+				kademlia.net.SendFindContactMessage(&contact, *target)
+				visited = append(visited, contact)
+				var k_triples []Contact
+				k_triples = <- kademlia.net.c
+				for _, s := range k_triples{
+					s.CalcDistance(target.ID) 
+					/* fmt.Println("closestNode is: ", closestNode)
+					fmt.Println("s is: ", s) */
+					shortlist.contacts = append(shortlist.contacts, s)
+					if(s.Less(&closestNode)){
+						closestNode = s
+					}
 				}
 			}
-			/* fmt.Println("Contacts in LookupContact: ",k_triples) */
-			//Check if response
-				//then resend find_node to nodes learned about from previous RPC
-			// else remove from consideration until they respond
 		}
 		
 	}
-	return closestNode
-	//fmt.Println("LookupContact is not implemented yet :(")
+	shortlist.Sort()
+	fmt.Println("shortlist: ", shortlist.contacts)
+	if(shortlist.Len() < 3){
+		return shortlist.contacts
+	}else{
+		return shortlist.contacts[:3]
+	}
 }
 
 func (kademlia *Kademlia) LookupData(hash string) {
-	// TODO
+	target := NewContact(NewKademliaID(hash), "")
+	contacts := kademlia.LookupContact(&target)
+	for _, contact := range contacts{
+		kademlia.net.SendFindDataMessage(&contact, hash)
+	}
 }
 
-func (kademlia *Kademlia) Store(data []byte) {
-	// TODO
+//data []bytes
+func (kademlia *Kademlia) Store(key string, value string) {
+	key2 := NewKademliaID(key)
+	target := NewContact(key2, "")
+	contacts := kademlia.LookupContact(&target)
+	for _, contact := range contacts{
+		kademlia.net.SendStoreMessage(&contact, key, value)
+		response := <- kademlia.net.storeChannel
+		fmt.Println("Store response is: ", response)
+	}
+	//kademlia.data.value = data
 }
 
 func contains(visited []Contact, contact Contact) bool {
 	for _, a := range visited {
 	   if a.ID == contact.ID {
+		  return true
+	   }
+	}
+	return false
+ }
+ func dataContains(data []Data, hash KademliaID) bool {
+	for _, a := range data {
+	   if a.key == &hash {
 		  return true
 	   }
 	}
