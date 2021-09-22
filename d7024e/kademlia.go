@@ -63,11 +63,16 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 	}
 }
 
+// START HEREEEE
 func (kademlia *Kademlia) LookupData(hash string) {
 	target := NewContact(NewKademliaID(hash), "")
 	contacts := kademlia.LookupContact(&target)
+	var value string
+	var k_triples []Contact
 	for _, contact := range contacts{
 		kademlia.net.SendFindDataMessage(&contact, hash)
+		value = <- kademlia.net.findValueChannel
+		k_triples = <- kademlia.net.c
 	}
 }
 
@@ -94,7 +99,7 @@ func contains(visited []Contact, contact Contact) bool {
  }
 func dataContains(data []Data, hash KademliaID) bool {
 	for _, a := range data {
-	   if a.key == &hash.String() {
+	   if a.key == hash.String() {
 		  return true
 	   }
 	}
