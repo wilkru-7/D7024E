@@ -22,7 +22,6 @@ type Triple struct{
 	Port int
 	ID *KademliaID
 }
-// Hej -> 0002102310023013021
 type Data struct{
 	key string
 	value string
@@ -54,7 +53,6 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 				}
 			}
 		}
-		
 	}
 	shortlist.Sort()
 	fmt.Println("shortlist: ", shortlist.contacts)
@@ -94,9 +92,9 @@ func contains(visited []Contact, contact Contact) bool {
 	}
 	return false
  }
- func dataContains(data []Data, hash KademliaID) bool {
+func dataContains(data []Data, hash KademliaID) bool {
 	for _, a := range data {
-	   if a.key == &hash {
+	   if a.key == &hash.String() {
 		  return true
 	   }
 	}

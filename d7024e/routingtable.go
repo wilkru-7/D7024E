@@ -1,7 +1,5 @@
 package d7024e
-import (
-    "fmt"
-) 
+
 const bucketSize = 3
 
 
@@ -71,9 +69,4 @@ func (routingTable *RoutingTable) getBucketIndex(id *KademliaID) int {
 	}
 
 	return IDLength*8 - 1
-}
-func (routingTable *RoutingTable) getLength(){
-	for _, bucket := range routingTable.buckets {
-		fmt.Println("bucket length: ",bucket.Len())
-	}
 }
