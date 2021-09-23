@@ -38,7 +38,8 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 			var pong string
 			pong = <- kademlia.net.pongChannel 
 			if(pong == "pong"){
-				kademlia.net.SendFindContactMessage(&contact, *target)
+				//kademlia.net.SendFindContactMessage(&contact, *target)
+				kademlia.net.SendFindContactMessage(&contact, target.ID.String())
 				visited = append(visited, contact)
 				var k_triples []Contact
 				k_triples = <- kademlia.net.c
@@ -67,12 +68,12 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 func (kademlia *Kademlia) LookupData(hash string) {
 	target := NewContact(NewKademliaID(hash), "")
 	contacts := kademlia.LookupContact(&target)
-	var value string
-	var k_triples []Contact
+	//var value string
+	//var k_triples []Contact
 	for _, contact := range contacts{
 		kademlia.net.SendFindDataMessage(&contact, hash)
-		value = <- kademlia.net.findValueChannel
-		k_triples = <- kademlia.net.c
+		//value = <- kademlia.net.findValueChannel
+		//k_triples = <- kademlia.net.c
 	}
 }
 
