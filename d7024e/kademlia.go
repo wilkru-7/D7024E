@@ -65,7 +65,7 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 
 // START HEREEEE
 func (kademlia *Kademlia) LookupData(hash string) {
-	target := NewContact(NewKademliaID(hash), "")
+/*	target := NewContact(NewKademliaID(hash), "")
 	contacts := kademlia.LookupContact(&target)
 	var value string
 	var k_triples []Contact
@@ -73,7 +73,7 @@ func (kademlia *Kademlia) LookupData(hash string) {
 		kademlia.net.SendFindDataMessage(&contact, hash)
 		value = <- kademlia.net.findValueChannel
 		k_triples = <- kademlia.net.c
-	}
+	}*/
 }
 
 //data []bytes
