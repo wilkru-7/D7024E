@@ -124,6 +124,7 @@ func (network *Network) Listen(ip string, port string) {
 				} else {
 					k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.key), 3)
 					network.SendFindContactMessageReturn(&message.Sender, k_contacts)
+					network.findValueChannel <- "nil"
 				}
 			}
 		case RPC == "FIND_VALUE_RETURN":

@@ -21,7 +21,7 @@ func main() {
     //var known *d7024e.Contact
     if (conn.LocalAddr().String() == "172.19.0.2"){
         //fmt.Println("We are in the if")
-        me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.19.0.2:8080") 
+        me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.21.0.2:8080") 
         //network.contact = d7024e.NewContact(d7024e.NewRandomKademliaID(), "localhost:80")
         //network.SendPingMessage(&contact)
         rt := d7024e.NewRoutingTable(me)
@@ -33,8 +33,8 @@ func main() {
         //kademlia.LookupContact(&me)
         //time.Sleep(1 * time.Second)
     } else if (conn.LocalAddr().String() == "172.19.0.3") {
-        known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.19.0.2:8080") 
-        me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000001"), "172.19.0.3:8080")
+        known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.21.0.2:8080") 
+        me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000001"), "172.21.0.3:8080")
         /* third := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000003"), "172.19.0.4:8080") */
         //network.contact = d7024e.NewContact(d7024e.NewRandomKademliaID(), "localhost:80")
         //network.SendPingMessage(&contact)
@@ -50,8 +50,8 @@ func main() {
         network.Listen("127.0.0.1", "8080")
         //time.Sleep(1 * time.Second)
     } else {
-        known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.19.0.2:8080") 
-        secondKnown := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000001"), "172.19.0.3:8080")
+        known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.21.0.2:8080") 
+        secondKnown := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000001"), "172.21.0.3:8080")
         /* me := d7024e.NewContact(d7024e.NewRandomKademliaID(), d7024e.GetLocalIP()+":8080") */
         me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000003"), d7024e.GetLocalIP()+":8080")
         //network.contact = d7024e.NewContact(d7024e.NewRandomKademliaID(), "localhost:80")

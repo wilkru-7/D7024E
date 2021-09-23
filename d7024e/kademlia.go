@@ -64,20 +64,29 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 	}
 }
 
+
 // START HEREEEE
-func (kademlia *Kademlia) LookupData(hash string) {
-/*	target := NewContact(NewKademliaID(hash), "")
+func (kademlia *Kademlia) LookupData(hash string) string {
+	target := NewContact(NewKademliaID(hash), "")
 	contacts := kademlia.LookupContact(&target)
-	//var value string
-	//var k_triples []Contact
+	var value string
+	var k_triples []Contact
+	var visited []Contact
 	for _, contact := range contacts{
-		kademlia.net.SendFindDataMessage(&contact, hash)
-		//value = <- kademlia.net.findValueChannel
-		//k_triples = <- kademlia.net.c
+		if(!contains(visited, contact)) {
+			kademlia.net.SendFindDataMessage(&contact, hash)
+			value = <- kademlia.net.findValueChannel
+			k_triples = <- kademlia.net.c
+			if value != "nil" {
+				return value
+			}
+			visited = append(visited, contact)
+			for _, s := range k_triples{ 
+				contacts = append(contacts, s)
+			}
+		}
 	}
-		value = <- kademlia.net.findValueChannel
-		k_triples = <- kademlia.net.c
-	}*/
+	return "nil"
 }
 
 //data []bytes
