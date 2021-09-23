@@ -19,7 +19,7 @@ func main() {
     fmt.Println(conn.LocalAddr())
     //var me *d7024e.Contact
     //var known *d7024e.Contact
-    if (conn.LocalAddr().String() == "172.19.0.2"){
+    if (conn.LocalAddr().String() == "172.21.0.2"){
         //fmt.Println("We are in the if")
         me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.21.0.2:8080") 
         //network.contact = d7024e.NewContact(d7024e.NewRandomKademliaID(), "localhost:80")
@@ -32,7 +32,7 @@ func main() {
         //kademlia := d7024e.NewKademlia(*rt, *network)
         //kademlia.LookupContact(&me)
         //time.Sleep(1 * time.Second)
-    } else if (conn.LocalAddr().String() == "172.19.0.3") {
+    } else if (conn.LocalAddr().String() == "172.21.0.3") {
         known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.21.0.2:8080") 
         me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000001"), "172.21.0.3:8080")
         /* third := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000003"), "172.19.0.4:8080") */
