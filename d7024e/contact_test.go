@@ -67,3 +67,9 @@ func TestContactCandidates_Sort(t *testing.T) {
 		t.Error("Error")
 	}
 }
+func TestContact_String(t *testing.T) {
+	contact := NewContact(NewKademliaID("0000000000000000000000000000000000000000"), "")
+	if contact.String() != "contact(\"0000000000000000000000000000000000000000\", \"\")" {
+		t.Error("Error")
+	}
+}
