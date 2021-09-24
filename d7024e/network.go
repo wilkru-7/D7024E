@@ -5,16 +5,10 @@ package d7024e
 import(
 	"net"
 	"fmt"
-	//"time"
-	//"net/http"
-	//"os"
 	"encoding/json"
-	//"strings"
-
-	//"github.com/labstack/echo/v4"
-	//"github.com/labstack/echo/v4/middleware"
 	
 )
+
 type Network struct {
 	contact *Contact
 	rt *RoutingTable
@@ -25,24 +19,17 @@ type Network struct {
 	findValueChannel chan string
 	
 }
+
 type Message struct {
 	Sender Contact
 	Receiver Contact
-	/* SenderIP string
-	ReceiverIP string */
 	RPC string
-	/* ContactID string
-	TargetID string */
-	//Target Contact
 	TargetID string
 	Contacts []Contact
 	key string
 	value string
 }
-type triple struct {
-	IP string
-	ID string
-}
+
 // NewRoutingTable returns a new instance of a RoutingTable
 func NewNetwork(contact *Contact, rt *RoutingTable) *Network {
 	network := &Network{}
@@ -92,7 +79,6 @@ func (network *Network) Listen(ip string, port string) {
 			network.pongChannel <- "pong"
 		case RPC == "FIND_NODE":
 			fmt.Println("received FIND_NODE from "+ message.Sender.Address)
-			//k_contacts := network.rt.FindClosestContacts(message.Target.ID, 3)
 			k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.TargetID), 3)
 			/* fmt.Println("Found these contacts: ", k_contacts) */
 			network.SendFindContactMessageReturn(&message.Sender, k_contacts)
@@ -144,11 +130,9 @@ func (network *Network) SendPingMessage(contact *Contact) {
 	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
 	defer connection.Close()
 
-	//convMsg := network.createRPC("ping", contact)
 	convMsg := network.createRPC("ping", contact, "", []Contact{}, "", "")
 	connection.Write(convMsg)
 }
-
 
 func (network *Network) SendPongMessage(contact *Contact) {
 	contactAddress, _ := net.ResolveUDPAddr("udp", contact.Address)
@@ -158,14 +142,11 @@ func (network *Network) SendPongMessage(contact *Contact) {
 	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
 	defer connection.Close()
 
-	//convMsg := network.createRPC("pong", contact)
 	convMsg := network.createRPC("pong", contact, "", []Contact{}, "", "")
 	connection.Write(convMsg)
 }
 
-//func (network *Network) SendFindContactMessage(contact *Contact, target Contact) {
 	func (network *Network) SendFindContactMessage(contact *Contact, targetID string) {
-	// TODO
 	contactAddress, _ := net.ResolveUDPAddr("udp", contact.Address)
 	fmt.Println("Sending FIND_NODE to: " , contactAddress)
 	localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP()+":80")
@@ -173,17 +154,11 @@ func (network *Network) SendPongMessage(contact *Contact) {
 	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
 	defer connection.Close()
 
-	//convMsg := network.createRPCFindNode("FIND_NODE", contact, target)
 	convMsg := network.createRPC("FIND_NODE", contact, targetID, []Contact{}, "", "")
 	connection.Write(convMsg)
-
-	/* contacts := <- network.c
-	fmt.Println("Received contacts on channel: ", contacts) */
-	//fmt.Println("Sending find contact message not implemented :( ")
 }
 
 func (network *Network) SendFindContactMessageReturn(contact *Contact, result []Contact) {
-	// TODO
 	contactAddress, _ := net.ResolveUDPAddr("udp", contact.Address)
 	fmt.Println("Sending FIND_NODE_RETURN to: " , contactAddress)
 	localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP()+":80")
@@ -191,16 +166,10 @@ func (network *Network) SendFindContactMessageReturn(contact *Contact, result []
 	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
 	defer connection.Close()
 
-	//convMsg := network.createRPCFindNodeReturn("FIND_NODE_RETURN", contact, result)
 	convMsg := network.createRPC("FIND_NODE_RETURN", contact, "", result, "", "")
 	connection.Write(convMsg)
-
-	// contacts := <- network.c
-	// fmt.Println("Received contacts on channel: ", contacts)
-	//fmt.Println("Sending find contact message not implemented :( ")
 }
 
-//func (network *Network) SendFindDataMessage(contact *Contact, hash string) {
 func (network *Network) SendFindDataMessage(contact *Contact, key string) {
 	contactAddress, _ := net.ResolveUDPAddr("udp", contact.Address)
 	fmt.Println("Sending FIND_VALUE to: " , contactAddress)
@@ -209,12 +178,10 @@ func (network *Network) SendFindDataMessage(contact *Contact, key string) {
 	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
 	defer connection.Close()
 
-	//convMsg := network.createRPCFindValue("FIND_VALUE", contact, hash)
 	convMsg := network.createRPC("FIND_VALUE", contact, "", []Contact{}, key, "")
 	connection.Write(convMsg)
 }
 
-//func (network *Network) SendFindDataMessageReturn(contact *Contact, hash string) {
 func (network *Network) SendFindDataMessageReturn(contact *Contact, value string) {
 	contactAddress, _ := net.ResolveUDPAddr("udp", contact.Address)
 	fmt.Println("Sending FIND_VALUE to: " , contactAddress)
@@ -223,7 +190,6 @@ func (network *Network) SendFindDataMessageReturn(contact *Contact, value string
 	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
 	defer connection.Close()
 
-	//convMsg := network.createRPCFindValue("FIND_VALUE_RETURN", contact, hash)
 	convMsg := network.createRPC("FIND_VALUE_RETURN", contact, "", []Contact{}, "", value)
 	connection.Write(convMsg)
 }
@@ -237,13 +203,11 @@ func (network *Network) SendStoreMessage(contact *Contact, key string, value str
 	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
 	defer connection.Close()
 
-	//convMsg := network.createRPCStore("STORE", contact, key, value)
 	convMsg := network.createRPC("STORE", contact, "", []Contact{}, key, value)
 	connection.Write(convMsg)
 }
 
 func (network *Network) SendStoreMessageReturn(contact *Contact) {
-	// TODO
 	contactAddress, _ := net.ResolveUDPAddr("udp", contact.Address)
 	fmt.Println("Sending STORE to: " , contactAddress)
 	localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP()+":80")
@@ -251,7 +215,6 @@ func (network *Network) SendStoreMessageReturn(contact *Contact) {
 	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
 	defer connection.Close()
 
-	//convMsg := network.createRPC("STORE_RETURN", contact)
 	convMsg := network.createRPC("STORE_RETURN", contact, "", []Contact{}, "", "")
 	connection.Write(convMsg)
 }

@@ -109,7 +109,8 @@ func contains(visited []Contact, contact Contact) bool {
 	   }
 	}
 	return false
- }
+}
+
 func dataContains(data []Data, hash KademliaID) bool {
 	for _, a := range data {
 	   if a.key == hash.String() {
@@ -117,4 +118,4 @@ func dataContains(data []Data, hash KademliaID) bool {
 	   }
 	}
 	return false
- }
+}
