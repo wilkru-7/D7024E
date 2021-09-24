@@ -13,14 +13,14 @@ func main() {
     conn,_ := net.Dial("ip:icmp","google.com")
     fmt.Println(conn.LocalAddr())
 
-    if (conn.LocalAddr().String() == "172.21.0.2"){
-        me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.21.0.2:8080") 
+    if (conn.LocalAddr().String() == "172.19.0.2"){
+        me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.19.0.2:8080") 
         rt := d7024e.NewRoutingTable(me)
         network := d7024e.NewNetwork(&me, rt)
         network.Listen("127.0.0.1", "8080")
-    } else if (conn.LocalAddr().String() == "172.21.0.3") {
-        known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.21.0.2:8080") 
-        me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000001"), "172.21.0.3:8080")
+    } else if (conn.LocalAddr().String() == "172.19.0.3") {
+        known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.19.0.2:8080") 
+        me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000001"), "172.19.0.3:8080")
         rt := d7024e.NewRoutingTable(me)
         rt.AddContact(known)
         network := d7024e.NewNetwork(&me, rt)
@@ -28,7 +28,7 @@ func main() {
         go kademlia.LookupContact(&me)
         network.Listen("127.0.0.1", "8080")
     } else {
-        known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.21.0.2:8080") 
+        known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.19.0.2:8080") 
         me := d7024e.NewContact(d7024e.NewRandomKademliaID(), d7024e.GetLocalIP()+":8080")
         rt := d7024e.NewRoutingTable(me)
         rt.AddContact(known)

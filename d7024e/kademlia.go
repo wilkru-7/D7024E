@@ -34,19 +34,16 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 	var visited []Contact
 	for _, contact := range shortlist.contacts {
 		if(!contains(visited, contact)){
-			kademlia.net.SendPingMessage(&contact)
+			kademlia.net.createRPC("ping", &contact, "", []Contact{}, "", "")
 			var pong string
 			pong = <- kademlia.net.pongChannel 
 			if(pong == "pong"){
-				//kademlia.net.SendFindContactMessage(&contact, *target)
-				kademlia.net.SendFindContactMessage(&contact, target.ID.String())
+				kademlia.net.createRPC("FIND_NODE", &contact, target.ID.String(), []Contact{}, "", "")
 				visited = append(visited, contact)
 				var k_triples []Contact
 				k_triples = <- kademlia.net.c
 				for _, s := range k_triples{
 					s.CalcDistance(target.ID) 
-					/* fmt.Println("closestNode is: ", closestNode)
-					fmt.Println("s is: ", s) */
 					shortlist.contacts = append(shortlist.contacts, s)
 					if(s.Less(&closestNode)){
 						closestNode = s
@@ -64,7 +61,6 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 	}
 }
 
-
 // NOT DONE
 func (kademlia *Kademlia) LookupData(hash string) string {
 	target := NewContact(NewKademliaID(hash), "")
@@ -74,7 +70,7 @@ func (kademlia *Kademlia) LookupData(hash string) string {
 	var visited []Contact
 	for _, contact := range contacts{
 		if(!contains(visited, contact)) {
-			kademlia.net.SendFindDataMessage(&contact, hash)
+			kademlia.net.createRPC("FIND_VALUE", &contact, "", []Contact{}, hash, "")
 			value = <- kademlia.net.findValueChannel
 			k_triples = <- kademlia.net.c
 			if value != "nil" {
@@ -95,7 +91,7 @@ func (kademlia *Kademlia) Store(key string, value string) {
 	target := NewContact(key2, "")
 	contacts := kademlia.LookupContact(&target)
 	for _, contact := range contacts{
-		kademlia.net.SendStoreMessage(&contact, key, value)
+		kademlia.net.createRPC("STORE", &contact, "", []Contact{}, key, value)
 		response := <- kademlia.net.storeChannel
 		fmt.Println("Store response is: ", response)
 	}
