@@ -52,8 +52,8 @@ func main() {
     } else {
         known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.21.0.2:8080") 
         //secondKnown := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000001"), "172.19.0.3:8080")
-        /* me := d7024e.NewContact(d7024e.NewRandomKademliaID(), d7024e.GetLocalIP()+":8080") */
-        me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000003"), d7024e.GetLocalIP()+":8080")
+        me := d7024e.NewContact(d7024e.NewRandomKademliaID(), d7024e.GetLocalIP()+":8080")
+        //me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000003"), d7024e.GetLocalIP()+":8080")
         //network.contact = d7024e.NewContact(d7024e.NewRandomKademliaID(), "localhost:80")
         //network.SendPingMessage(&contact)
         rt := d7024e.NewRoutingTable(me)
