@@ -51,7 +51,7 @@ func main() {
         //time.Sleep(1 * time.Second)
     } else {
         known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.21.0.2:8080") 
-        secondKnown := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000001"), "172.21.0.3:8080")
+        //secondKnown := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000001"), "172.19.0.3:8080")
         /* me := d7024e.NewContact(d7024e.NewRandomKademliaID(), d7024e.GetLocalIP()+":8080") */
         me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000003"), d7024e.GetLocalIP()+":8080")
         //network.contact = d7024e.NewContact(d7024e.NewRandomKademliaID(), "localhost:80")
@@ -65,7 +65,7 @@ func main() {
         /* go network.SendFindContactMessage(&me, *d7024e.NewKademliaID("0000000000000000000000000000000000000009")) */
         kademlia := d7024e.NewKademlia(*rt, network)
         /* go kademlia.LookupContact(&me) */
-        go kademlia.LookupContact(&secondKnown)
+        go kademlia.LookupContact(&me)
         /* contacts := kademlia.LookupContact(&secondKnown)
         fmt.Println("contacts: ",contacts) */
        /*  for _, bucket := range rt.buckets {

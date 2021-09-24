@@ -65,7 +65,7 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 }
 
 
-// START HEREEEE
+// NOT DONE
 func (kademlia *Kademlia) LookupData(hash string) string {
 	target := NewContact(NewKademliaID(hash), "")
 	contacts := kademlia.LookupContact(&target)
