@@ -25,8 +25,8 @@ type Message struct {
 	RPC string
 	TargetID string
 	Contacts []Contact
-	key string
-	value string
+	Key string
+	Value string
 }
 
 func NewNetwork(contact *Contact, rt *RoutingTable) *Network {
@@ -54,7 +54,7 @@ func (network *Network) Listen(ip string, port string) {
 
 	for {
 		var message Message
-		buffer := make([]byte, 4096)
+		buffer := make([]byte, 4096*2)
 		length, _, err := connection.ReadFromUDP(buffer)
 
 		if err != nil {
@@ -85,33 +85,33 @@ func (network *Network) Listen(ip string, port string) {
 			fmt.Println("received STORE from "+ message.Sender.Address)
 			exist := false
 			for _, s := range network.data{
-				if s.key == message.key {
+				if s.key == message.Key {
 					exist = true
 				}
 			}
 			if !exist{
 				data := Data{}
-				data.key = message.key
-				data.value = message.value
+				data.key = message.Key
+				data.value = message.Value
 				network.data = append(network.data, data)
-				network.createRPC("STORE", &message.Sender, "", []Contact{}, data.key, data.value)
+				network.createRPC("STORE_RETURN", &message.Sender, "", []Contact{}, data.key, data.value)
 			}
 		case RPC == "STORE_RETURN":
 			network.storeChannel <- "Store Completed"
 		case RPC == "FIND_VALUE":
 			fmt.Println("received FIND_VALUE from "+ message.Sender.Address)
 			for _, s := range network.data{
-				if s.key == message.key {
+				if s.key == message.Key {
 					network.createRPC("FIND_VALUE_RETURN", &message.Sender, "", []Contact{}, "", s.value)
 				} else {
-					k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.key), 3)
-					network.createRPC("FIND_NODE_RETURN", &message.Sender, "", k_contacts, "", "")
+					/* k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.Key), 3)
+					network.createRPC("FIND_NODE_RETURN", &message.Sender, "", k_contacts, "", "") */
 					network.findValueChannel <- "nil"
 				}
 			}
 		case RPC == "FIND_VALUE_RETURN":
 			fmt.Println("received FIND_VALUE_RETURN from "+ message.Sender.Address)
-			network.findValueChannel <- message.value
+			network.findValueChannel <- message.Value
 		default:
 			fmt.Println("Invalid RPC")
 		}
@@ -124,15 +124,14 @@ func (network *Network) createRPC(rpc string, receiver *Contact, targetID string
 	localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP()+":80")
 	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
 	defer connection.Close()
-
 	message := &Message{}
+	message.Key = key
+	message.Value = value
 	message.Sender = *network.contact
 	message.Receiver = *receiver
 	message.RPC = rpc
 	message.TargetID = targetID
 	message.Contacts = contacts
-	message.key = key
-	message.value = value
 
 	convMsg, err := json.Marshal(message)
 

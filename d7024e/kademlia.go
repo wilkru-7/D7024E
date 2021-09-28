@@ -53,7 +53,6 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 		}
 	}
 	shortlist.Sort()
-	fmt.Println("shortlist: ", shortlist.contacts)
 	if(shortlist.Len() < 3){
 		return shortlist.contacts
 	}else{
@@ -70,29 +69,35 @@ func (kademlia *Kademlia) LookupData(hash string) string {
 	var visited []Contact
 	for _, contact := range contacts{
 		if(!contains(visited, contact)) {
+			fmt.Println("11111")
 			kademlia.net.createRPC("FIND_VALUE", &contact, "", []Contact{}, hash, "")
+			fmt.Println("22222")
 			value = <- kademlia.net.findValueChannel
+			fmt.Println("33333")
 			k_triples = <- kademlia.net.c
+			fmt.Println("44444")
 			if value != "nil" {
 				return value
 			}
+			fmt.Println("55555")
 			visited = append(visited, contact)
 			for _, s := range k_triples{ 
 				contacts = append(contacts, s)
 			}
+			fmt.Println("66666")
 		}
 	}
 	return "nil"
 }
 
 //data []bytes
-func (kademlia *Kademlia) Store(key string, value string) {
-	key2 := NewKademliaID(key)
-	target := NewContact(key2, "")
+func (kademlia *Kademlia) Store(key *KademliaID, value string) {
+	target := NewContact(key, "")
 	contacts := kademlia.LookupContact(&target)
+	var response string
 	for _, contact := range contacts{
-		kademlia.net.createRPC("STORE", &contact, "", []Contact{}, key, value)
-		response := <- kademlia.net.storeChannel
+		kademlia.net.createRPC("STORE", &contact, "", []Contact{}, key.String(), value)
+		response = <- kademlia.net.storeChannel
 		fmt.Println("Store response is: ", response)
 	}
 	//kademlia.data.value = data
