@@ -43,8 +43,8 @@ func scanner(kademlia *d7024e.Kademlia) {
             }
             //Print content and node it was retreived from
 
-        case text[0] == "exit1":
-            os.Exit(3)
+        case text[0] == "exit":
+            os.Exit(0)
             break;
         default:
             fmt.Println("Command not supported, try put, get or exit")
