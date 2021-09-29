@@ -64,34 +64,50 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 func (kademlia *Kademlia) LookupData(hash string) []string {
 	var shortlist ContactCandidates
 	target := NewContact(NewKademliaID(hash), "")
-	shortlist.contacts = kademlia.LookupContact(&target)
+	//shortlist.contacts = kademlia.LookupContact(&target)
+	shortlist.contacts = kademlia.rt.FindClosestContacts(target.ID, kademlia.alpha)
 	var value, sender string
 	var k_triples []Contact
 	var visited []Contact
-	for _, contact := range shortlist.contacts{
-		if(!contains(visited, contact)) {
-			kademlia.net.createRPC("FIND_VALUE", &contact, "", []Contact{}, hash, "")
+	counter := 0
+	//for _, contact := range shortlist.contacts{
+	for len(shortlist.contacts) > 0 {
+		//fmt.Println("in for loop: ", shortlist.contacts)
+		//if(!contains(visited, contact)) {
+			kademlia.net.createRPC("FIND_VALUE", &shortlist.contacts[0], "", []Contact{}, hash, "")
+			visited = append(visited, shortlist.contacts[0])
 			value = <- kademlia.net.findValueChannel
 			sender = <- kademlia.net.senderChannel
 			if value != "nil" {
 				return []string{value, sender}
 			}
 			k_triples = <- kademlia.net.c
-			visited = append(visited, contact)
 			for _, s := range k_triples{ 
-				s.CalcDistance(target.ID)
-				shortlist.contacts = append(shortlist.contacts, s)
+				if(!contains(visited, s) && !contains(shortlist.contacts, s)) {
+					s.CalcDistance(target.ID)
+					shortlist.contacts = append(shortlist.contacts, s)
+					fmt.Println("append contact: ", s)
+				}
 			}
-		}
+			if len(shortlist.contacts) == 1 {
+				shortlist.contacts = []Contact{}
+			} else {
+				fmt.Println("removing contact: ", shortlist.contacts[0])
+				shortlist.contacts = shortlist.contacts[1:]
+			}
+			//fmt.Println("in for loop111111: ", shortlist.contacts)
+			counter += 1
+			fmt.Println("counter is ", counter, "length of shortlist is: ", len(shortlist.contacts))
+		//}
 	}
-	shortlist.Sort()
+	/*shortlist.Sort()
 	var result []string
 	for i, contact := range shortlist.contacts {
 		if i < 3 {
 			result = append(result, contact.String())
 		}
-	}
-	return result
+	}*/
+	return []string{"contact test", "test"}
 }
 
 //data []bytes

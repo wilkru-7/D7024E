@@ -102,20 +102,16 @@ func (network *Network) Listen(ip string, port string) {
 		case RPC == "FIND_VALUE":
 			fmt.Println("received FIND_VALUE from "+ message.Sender.Address)
 			if len(network.data) == 0 {
-				fmt.Println("In find value rpc if")
 				network.createRPC("FIND_VALUE_RETURN_NIL", &message.Sender, "", []Contact{}, "", "")
 				k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.Key), 3)
-				fmt.Println("In find value rpc if 11111")
 				network.createRPC("FIND_NODE_RETURN", &message.Sender, "", k_contacts, "", "")
 			} else {
 				for _, s := range network.data{
 					if s.key == message.Key {
 						network.createRPC("FIND_VALUE_RETURN", &message.Sender, "", []Contact{}, "", s.value)
 					} else {
-						fmt.Println("In find value rpc else")
 						k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.Key), 3)
 						network.createRPC("FIND_VALUE_RETURN_NIL", &message.Sender, "", []Contact{}, "", "")
-						fmt.Println("In find value rpc else 11111")
 						network.createRPC("FIND_NODE_RETURN", &message.Sender, "", k_contacts, "", "")
 					}
 				}
