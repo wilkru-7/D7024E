@@ -35,11 +35,16 @@ func scanner(kademlia *d7024e.Kademlia) {
             hex.Encode(dst, src)
             keyString := string(dst) */
             /* key := d7024e.NewKademliaID(keyString) */
-            value := kademlia.LookupData(text[1])
-            fmt.Println("Value is: ", value)
+            result := kademlia.LookupData(text[1])
+            if !strings.HasPrefix(result[0], "contact") {
+                fmt.Println("Value is: ", result[0], " retrieved from: ", result[1])
+            } else {
+                fmt.Println("Value not found")
+            }
             //Print content and node it was retreived from
 
-        case text[0] == "exit":
+        case text[0] == "exit1":
+            os.Exit(3)
             break;
         default:
             fmt.Println("Command not supported, try put, get or exit")
@@ -55,16 +60,16 @@ func main() {
     fmt.Println(conn.LocalAddr())
 
     /* go scanner() */
-    if (conn.LocalAddr().String() == "172.22.0.2"){
-        me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.22.0.2:8080") 
+    if (conn.LocalAddr().String() == "172.19.0.2"){
+        me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.19.0.2:8080") 
         rt := d7024e.NewRoutingTable(me)
         network := d7024e.NewNetwork(&me, rt)
         kademlia := d7024e.NewKademlia(*rt, network)
         go scanner(kademlia)
         network.Listen("127.0.0.1", "8080")
-    } else if (conn.LocalAddr().String() == "172.22.0.3") {
-        known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.22.0.2:8080") 
-        me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000001"), "172.22.0.3:8080")
+    } else if (conn.LocalAddr().String() == "172.19.0.3") {
+        known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.19.0.2:8080") 
+        me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000001"), "172.19.0.3:8080")
         rt := d7024e.NewRoutingTable(me)
         rt.AddContact(known)
         network := d7024e.NewNetwork(&me, rt)
@@ -73,7 +78,7 @@ func main() {
         go scanner(kademlia)
         network.Listen("127.0.0.1", "8080")
     } else {
-        known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.22.0.2:8080") 
+        known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.19.0.2:8080") 
         me := d7024e.NewContact(d7024e.NewRandomKademliaID(), d7024e.GetLocalIP()+":8080")
         rt := d7024e.NewRoutingTable(me)
         rt.AddContact(known)

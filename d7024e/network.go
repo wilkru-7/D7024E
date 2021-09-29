@@ -16,7 +16,7 @@ type Network struct {
 	data []Data
 	storeChannel chan string
 	findValueChannel chan string
-	
+	senderChannel chan string
 }
 
 type Message struct {
@@ -37,6 +37,7 @@ func NewNetwork(contact *Contact, rt *RoutingTable) *Network {
 	network.pongChannel = make(chan string)
 	network.storeChannel = make(chan string)
 	network.findValueChannel = make(chan string)
+	network.senderChannel = make(chan string)
 	return network
 }
 
@@ -100,18 +101,33 @@ func (network *Network) Listen(ip string, port string) {
 			network.storeChannel <- "Store Completed"
 		case RPC == "FIND_VALUE":
 			fmt.Println("received FIND_VALUE from "+ message.Sender.Address)
-			for _, s := range network.data{
-				if s.key == message.Key {
-					network.createRPC("FIND_VALUE_RETURN", &message.Sender, "", []Contact{}, "", s.value)
-				} else {
-					/* k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.Key), 3)
-					network.createRPC("FIND_NODE_RETURN", &message.Sender, "", k_contacts, "", "") */
-					network.findValueChannel <- "nil"
+			if len(network.data) == 0 {
+				fmt.Println("In find value rpc if")
+				network.createRPC("FIND_VALUE_RETURN_NIL", &message.Sender, "", []Contact{}, "", "")
+				k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.Key), 3)
+				fmt.Println("In find value rpc if 11111")
+				network.createRPC("FIND_NODE_RETURN", &message.Sender, "", k_contacts, "", "")
+			} else {
+				for _, s := range network.data{
+					if s.key == message.Key {
+						network.createRPC("FIND_VALUE_RETURN", &message.Sender, "", []Contact{}, "", s.value)
+					} else {
+						fmt.Println("In find value rpc else")
+						k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.Key), 3)
+						network.createRPC("FIND_VALUE_RETURN_NIL", &message.Sender, "", []Contact{}, "", "")
+						fmt.Println("In find value rpc else 11111")
+						network.createRPC("FIND_NODE_RETURN", &message.Sender, "", k_contacts, "", "")
+					}
 				}
 			}
 		case RPC == "FIND_VALUE_RETURN":
 			fmt.Println("received FIND_VALUE_RETURN from "+ message.Sender.Address)
-			network.findValueChannel <- message.Value
+			network.findValueChannel <- message.Value 
+			network.senderChannel <- message.Sender.String()
+		case RPC == "FIND_VALUE_RETURN_NIL":
+			fmt.Println("received FIND_VALUE_RETURN_NIL from "+ message.Sender.Address)
+			network.findValueChannel <- "nil"
+			network.senderChannel <- "nil"
 		default:
 			fmt.Println("Invalid RPC")
 		}

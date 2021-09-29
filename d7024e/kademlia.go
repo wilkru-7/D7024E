@@ -61,33 +61,37 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 }
 
 // NOT DONE
-func (kademlia *Kademlia) LookupData(hash string) string {
+func (kademlia *Kademlia) LookupData(hash string) []string {
+	var shortlist ContactCandidates
 	target := NewContact(NewKademliaID(hash), "")
-	contacts := kademlia.LookupContact(&target)
-	var value string
+	shortlist.contacts = kademlia.LookupContact(&target)
+	var value, sender string
 	var k_triples []Contact
 	var visited []Contact
-	for _, contact := range contacts{
+	for _, contact := range shortlist.contacts{
 		if(!contains(visited, contact)) {
-			fmt.Println("11111")
 			kademlia.net.createRPC("FIND_VALUE", &contact, "", []Contact{}, hash, "")
-			fmt.Println("22222")
 			value = <- kademlia.net.findValueChannel
-			fmt.Println("33333")
-			k_triples = <- kademlia.net.c
-			fmt.Println("44444")
+			sender = <- kademlia.net.senderChannel
 			if value != "nil" {
-				return value
+				return []string{value, sender}
 			}
-			fmt.Println("55555")
+			k_triples = <- kademlia.net.c
 			visited = append(visited, contact)
 			for _, s := range k_triples{ 
-				contacts = append(contacts, s)
+				s.CalcDistance(target.ID)
+				shortlist.contacts = append(shortlist.contacts, s)
 			}
-			fmt.Println("66666")
 		}
 	}
-	return "nil"
+	shortlist.Sort()
+	var result []string
+	for i, contact := range shortlist.contacts {
+		if i < 3 {
+			result = append(result, contact.String())
+		}
+	}
+	return result
 }
 
 //data []bytes
