@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"time"
 )
+const TTL = 20
 
 type Network struct {
 	contact *Contact
@@ -32,6 +34,7 @@ type Message struct {
 type Data struct{
 	key string
 	value string
+	lastAccess int64
 }
 
 func dataContains(data []Data, hash KademliaID) bool {
@@ -42,6 +45,19 @@ func dataContains(data []Data, hash KademliaID) bool {
 	}
 	return false
 }
+func dataGetIndex(data []Data, hash string) int {
+	for i, a := range data {
+	   if a.key == hash {
+		  return i
+	   }
+	}
+	return -1
+}
+func remove(data []Data, i int) []Data{
+    data[i] = data[len(data)-1]
+    return data[:len(data)-1]
+}
+
 
 func NewNetwork(contact *Contact, rt *RoutingTable) *Network {
 	network := &Network{}
@@ -108,7 +124,11 @@ func (network *Network) Listen(ip string, port string) {
 				data := Data{}
 				data.key = message.Key
 				data.value = message.Value
+				data.lastAccess = time.Now().Unix()
 				network.data = append(network.data, data)
+				fmt.Println("Creating data TTL: ", data.lastAccess)
+				go network.checkTTL(&data, TTL)
+
 				network.createRPC("STORE_RETURN", &message.Sender, "", []Contact{}, data.key, data.value)
 			}else{
 				network.createRPC("STORE_RETURN_FAIL", &message.Sender, "", []Contact{}, "", "")
@@ -124,8 +144,10 @@ func (network *Network) Listen(ip string, port string) {
 				k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.Key), 3)
 				network.createRPC("FIND_NODE_RETURN", &message.Sender, "", k_contacts, "", "")
 			} else {
-				for _, s := range network.data{
+				for i, s := range network.data{
 					if s.key == message.Key {
+						network.data[i].lastAccess = time.Now().Unix()
+						fmt.Println("Updating TTL: ", time.Now().Unix())
 						network.createRPC("FIND_VALUE_RETURN", &message.Sender, "", []Contact{}, "", s.value)
 					} else {
 						k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.Key), 3)
@@ -187,4 +209,16 @@ func GetLocalIP() string {
 		}
 	}
 	return localIP
+}
+func (network *Network) checkTTL(data *Data, TTL int){
+	for now := range time.Tick(time.Second){
+		index := dataGetIndex(network.data, data.key)
+		if now.Unix() - network.data[index].lastAccess > int64(TTL){
+			if index != -1{
+				fmt.Println("REMOVING OBJECT: ", now.Unix())
+				network.data = remove(network.data, index)
+				break
+			}
+		}
+	}
 }
