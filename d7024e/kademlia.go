@@ -7,7 +7,6 @@ type Kademlia struct {
 	rt RoutingTable
 	net *Network
 	alpha int
-	data []Data
 }
 
 func NewKademlia(rt RoutingTable, net *Network) *Kademlia {
@@ -16,15 +15,6 @@ func NewKademlia(rt RoutingTable, net *Network) *Kademlia {
 	kademlia.alpha = 3
 	kademlia.net = net
 	return kademlia
-}
-type Triple struct{
-	Address  string
-	Port int
-	ID *KademliaID
-}
-type Data struct{
-	key string
-	value string
 }
 
 func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
@@ -60,81 +50,68 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 	}
 }
 
-// NOT DONE
 func (kademlia *Kademlia) LookupData(hash string) []string {
 	var shortlist ContactCandidates
 	target := NewContact(NewKademliaID(hash), "")
-	//shortlist.contacts = kademlia.LookupContact(&target)
 	shortlist.contacts = kademlia.rt.FindClosestContacts(target.ID, kademlia.alpha)
 	var value, sender string
 	var k_triples []Contact
-	var visited []Contact
+	var visited ContactCandidates
 	counter := 0
-	//for _, contact := range shortlist.contacts{
 	for len(shortlist.contacts) > 0 {
-		//fmt.Println("in for loop: ", shortlist.contacts)
-		//if(!contains(visited, contact)) {
-			kademlia.net.createRPC("FIND_VALUE", &shortlist.contacts[0], "", []Contact{}, hash, "")
-			visited = append(visited, shortlist.contacts[0])
-			value = <- kademlia.net.findValueChannel
-			sender = <- kademlia.net.senderChannel
-			if value != "nil" {
-				return []string{value, sender}
+		kademlia.net.createRPC("FIND_VALUE", &shortlist.contacts[0], "", []Contact{}, hash, "")
+		visited.contacts = append(visited.contacts, shortlist.contacts[0])
+		value = <- kademlia.net.findValueChannel
+		sender = <- kademlia.net.senderChannel
+		if value != "nil" {
+			return []string{value, sender}
+		}
+		k_triples = <- kademlia.net.c
+		for _, s := range k_triples{ 
+			if(!contains(visited.contacts, s) && !contains(shortlist.contacts, s)) {
+				s.CalcDistance(target.ID)
+				shortlist.contacts = append(shortlist.contacts, s)
 			}
-			k_triples = <- kademlia.net.c
-			for _, s := range k_triples{ 
-				if(!contains(visited, s) && !contains(shortlist.contacts, s)) {
-					s.CalcDistance(target.ID)
-					shortlist.contacts = append(shortlist.contacts, s)
-					fmt.Println("append contact: ", s)
-				}
-			}
-			if len(shortlist.contacts) == 1 {
-				shortlist.contacts = []Contact{}
-			} else {
-				fmt.Println("removing contact: ", shortlist.contacts[0])
-				shortlist.contacts = shortlist.contacts[1:]
-			}
-			//fmt.Println("in for loop111111: ", shortlist.contacts)
-			counter += 1
-			fmt.Println("counter is ", counter, "length of shortlist is: ", len(shortlist.contacts))
-		//}
+		}
+		if len(shortlist.contacts) == 1 {
+			shortlist.contacts = []Contact{}
+		} else {	
+			shortlist.contacts = shortlist.contacts[1:]
+		}
+		counter += 1
 	}
-	/*shortlist.Sort()
+	visited.Sort()
 	var result []string
-	for i, contact := range shortlist.contacts {
+	for i, contact := range visited.contacts {
 		if i < 3 {
 			result = append(result, contact.String())
 		}
-	}*/
-	return []string{"contact test", "test"}
+	}
+	return result
 }
 
 //data []bytes
-func (kademlia *Kademlia) Store(key *KademliaID, value string) {
+func (kademlia *Kademlia) Store(key *KademliaID, value string) bool {
 	target := NewContact(key, "")
 	contacts := kademlia.LookupContact(&target)
-	var response string
+	var response bool
+	successful := false
 	for _, contact := range contacts{
 		kademlia.net.createRPC("STORE", &contact, "", []Contact{}, key.String(), value)
 		response = <- kademlia.net.storeChannel
-		fmt.Println("Store response is: ", response)
+		if(response){
+			fmt.Println("Store completed")
+			successful = true
+		}else{
+			fmt.Println("Store failed")
+		}
 	}
-	//kademlia.data.value = data
+	return successful
 }
 
 func contains(visited []Contact, contact Contact) bool {
 	for _, a := range visited {
-	   if a.ID == contact.ID {
-		  return true
-	   }
-	}
-	return false
-}
-
-func dataContains(data []Data, hash KademliaID) bool {
-	for _, a := range data {
-	   if a.key == hash.String() {
+	   if a.ID.Equals(contact.ID){
 		  return true
 	   }
 	}

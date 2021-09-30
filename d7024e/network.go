@@ -14,7 +14,7 @@ type Network struct {
 	c chan []Contact
 	pongChannel chan string
 	data []Data
-	storeChannel chan string
+	storeChannel chan bool
 	findValueChannel chan string
 	senderChannel chan string
 }
@@ -29,13 +29,27 @@ type Message struct {
 	Value string
 }
 
+type Data struct{
+	key string
+	value string
+}
+
+func dataContains(data []Data, hash KademliaID) bool {
+	for _, a := range data {
+	   if a.key == hash.String() {
+		  return true
+	   }
+	}
+	return false
+}
+
 func NewNetwork(contact *Contact, rt *RoutingTable) *Network {
 	network := &Network{}
 	network.contact = contact
 	network.rt = rt
 	network.c = make(chan []Contact)
 	network.pongChannel = make(chan string)
-	network.storeChannel = make(chan string)
+	network.storeChannel = make(chan bool)
 	network.findValueChannel = make(chan string)
 	network.senderChannel = make(chan string)
 	return network
@@ -96,9 +110,13 @@ func (network *Network) Listen(ip string, port string) {
 				data.value = message.Value
 				network.data = append(network.data, data)
 				network.createRPC("STORE_RETURN", &message.Sender, "", []Contact{}, data.key, data.value)
+			}else{
+				network.createRPC("STORE_RETURN_FAIL", &message.Sender, "", []Contact{}, "", "")
 			}
 		case RPC == "STORE_RETURN":
-			network.storeChannel <- "Store Completed"
+			network.storeChannel <- true
+		case RPC == "STORE_RETURN_FAIL":
+			network.storeChannel <- false
 		case RPC == "FIND_VALUE":
 			fmt.Println("received FIND_VALUE from "+ message.Sender.Address)
 			if len(network.data) == 0 {
