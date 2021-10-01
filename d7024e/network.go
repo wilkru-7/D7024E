@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"time"
+	"sync"
 )
 const TTL = 20
 
@@ -19,6 +20,7 @@ type Network struct {
 	storeChannel chan bool
 	findValueChannel chan string
 	senderChannel chan string
+	mu sync.Mutex
 }
 
 type Message struct {
@@ -86,7 +88,9 @@ func (network *Network) Listen(ip string, port string) {
 	for {
 		var message Message
 		buffer := make([]byte, 4096*2)
+		
 		length, _, err := connection.ReadFromUDP(buffer)
+		
 
 		if err != nil {
 			fmt.Println("error in listen")
@@ -167,7 +171,7 @@ func (network *Network) Listen(ip string, port string) {
 		case RPC == "UPDATE_TTL":
 			fmt.Println("Recieved UPDATE_TTL from: ", message.Sender.Address)
 			for i, s := range network.data{
-				if s.key == message.Key {
+				if s.key == message.Key{
 					network.data[i].lastAccess = time.Now().Unix()
 					fmt.Println("Updating TTL: ", time.Now().Unix())
 				}
@@ -180,10 +184,16 @@ func (network *Network) Listen(ip string, port string) {
 }
 
 func (network *Network) createRPC(rpc string, receiver *Contact, targetID string, contacts []Contact, key string, value string) {
+	network.mu.Lock()
 	contactAddress, _ := net.ResolveUDPAddr("udp", receiver.Address)
 	fmt.Println("Sending " + rpc + " to: " , contactAddress)
 	localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP()+":80")
-	connection, _ := net.DialUDP("udp", localAddress, contactAddress)
+	fmt.Println("localAddress in createRPC: ", localAddress)
+	connection, err := net.DialUDP("udp", localAddress, contactAddress)
+	if err != nil{
+		fmt.Println(err)
+	}
+	fmt.Println("Done with connection in createRPC")
 	defer connection.Close()
 	message := &Message{}
 	message.Key = key
@@ -202,6 +212,7 @@ func (network *Network) createRPC(rpc string, receiver *Contact, targetID string
 
 	connection.Write(convMsg)
 	fmt.Println("Done with the RPC")
+	network.mu.Unlock()
 }
 
 func GetLocalIP() string {

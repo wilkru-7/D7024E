@@ -8,6 +8,7 @@ type Kademlia struct {
 	rt RoutingTable
 	net *Network
 	alpha int
+	keys []string
 }
 
 func NewKademlia(rt RoutingTable, net *Network) *Kademlia {
@@ -15,6 +16,7 @@ func NewKademlia(rt RoutingTable, net *Network) *Kademlia {
 	kademlia.rt = rt
 	kademlia.alpha = 3
 	kademlia.net = net
+	kademlia.keys = []string{}
 	return kademlia
 }
 
@@ -102,6 +104,9 @@ func (kademlia *Kademlia) Store(key *KademliaID, value string) bool {
 		response = <- kademlia.net.storeChannel
 		if(response){
 			fmt.Println("Store completed")
+			if (!containsString(kademlia.keys, key.String())) {
+				kademlia.keys = append(kademlia.keys, key.String())
+			}
 			go kademlia.updateTTL(contact, key.String())
 			successful = true
 		}else{
@@ -119,17 +124,36 @@ func contains(visited []Contact, contact Contact) bool {
 	}
 	return false
 }
+
+func containsString(visited []string, key string) bool {
+	for _, a := range visited {
+	   if a == key{
+		  return true
+	   }
+	}
+	return false
+}
+
 func (kademlia *Kademlia) updateTTL(contact Contact, key string){
 	for _ = range time.Tick(time.Second * 5) {
-		fmt.Println("Pingin inside UPdateTTL: ", contact)
-		kademlia.net.createRPC("ping", &contact, "", []Contact{}, "", "")
-		fmt.Println("WE PINGINGG!")
-		var pong string
-		pong = <- kademlia.net.pongChannel 
-		if(pong == "pong"){
-			fmt.Println("Updataing TTL inside PONG")
-			kademlia.net.createRPC("UPDATE_TTL", &contact, "", []Contact{}, key, "")
+		if containsString(kademlia.keys, key) {
+			kademlia.net.createRPC("ping", &contact, "", []Contact{}, "", "")
+			var pong string
+			pong = <- kademlia.net.pongChannel 
+			if(pong == "pong"){
+				kademlia.net.createRPC("UPDATE_TTL", &contact, "", []Contact{}, key, "")
+			}
 		}
-		/* kademlia.net.updateTTL(&contact, key) */
+	}
+	
+}
+
+func (kademlia *Kademlia) Forget(key string){
+	for i, a := range kademlia.keys {
+		if a == key{
+			kademlia.keys[i] = kademlia.keys[len(kademlia.keys)-1]
+    		kademlia.keys = kademlia.keys[:len(kademlia.keys)-1]
+			fmt.Println("Removing key: " , a)
+		}
 	}
 }

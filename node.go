@@ -32,6 +32,8 @@ func scanner(kademlia *d7024e.Kademlia) {
             } else {
                 fmt.Println("Value not found but here are the closest contacts: ", result)
             }
+        case text[0] == "forget" && len(text) == 2:
+            kademlia.Forget(text[1])
         case text[0] == "exit":
             os.Exit(0)
         default:
@@ -46,17 +48,17 @@ func main() {
     conn,_ := net.Dial("ip:icmp","google.com")
     fmt.Println(conn.LocalAddr())
     
-    if (conn.LocalAddr().String() == "172.22.0.2"){
-        me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.22.0.2:8080") 
+    if (conn.LocalAddr().String() == "172.19.0.2"){
+        me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.19.0.2:8080") 
         rt := d7024e.NewRoutingTable(me)
         network := d7024e.NewNetwork(&me, rt)
         kademlia := d7024e.NewKademlia(*rt, network)
         go startAPI(kademlia)
         go scanner(kademlia)
         network.Listen("127.0.0.1", "8080")
-    } else if (conn.LocalAddr().String() == "172.22.0.3") {
-        known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.22.0.2:8080") 
-        me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000001"), "172.22.0.3:8080")
+    } else if (conn.LocalAddr().String() == "172.19.0.3") {
+        known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.19.0.2:8080") 
+        me := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000001"), "172.19.0.3:8080")
         rt := d7024e.NewRoutingTable(me)
         rt.AddContact(known)
         network := d7024e.NewNetwork(&me, rt)
@@ -66,7 +68,7 @@ func main() {
         go scanner(kademlia)
         network.Listen("127.0.0.1", "8080")
     } else {
-        known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.22.0.2:8080") 
+        known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.19.0.2:8080") 
         me := d7024e.NewContact(d7024e.NewRandomKademliaID(), d7024e.GetLocalIP()+":8080")
         rt := d7024e.NewRoutingTable(me)
         rt.AddContact(known)
