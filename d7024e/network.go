@@ -188,13 +188,14 @@ func (network *Network) createRPC(rpc string, receiver *Contact, targetID string
 	contactAddress, _ := net.ResolveUDPAddr("udp", receiver.Address)
 	fmt.Println("Sending " + rpc + " to: " , contactAddress)
 	localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP()+":80")
-	fmt.Println("localAddress in createRPC: ", localAddress)
 	connection, err := net.DialUDP("udp", localAddress, contactAddress)
+	
 	if err != nil{
 		fmt.Println(err)
 	}
-	fmt.Println("Done with connection in createRPC")
+	
 	defer connection.Close()
+
 	message := &Message{}
 	message.Key = key
 	message.Value = value
@@ -211,7 +212,6 @@ func (network *Network) createRPC(rpc string, receiver *Contact, targetID string
 	}
 
 	connection.Write(convMsg)
-	fmt.Println("Done with the RPC")
 	network.mu.Unlock()
 }
 
