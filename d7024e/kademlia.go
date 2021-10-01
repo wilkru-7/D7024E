@@ -2,6 +2,7 @@ package d7024e
 
 import(
 	"fmt"
+	"time"
 )
 type Kademlia struct {
 	rt RoutingTable
@@ -101,6 +102,7 @@ func (kademlia *Kademlia) Store(key *KademliaID, value string) bool {
 		response = <- kademlia.net.storeChannel
 		if(response){
 			fmt.Println("Store completed")
+			go kademlia.updateTTL(contact, key.String())
 			successful = true
 		}else{
 			fmt.Println("Store failed")
@@ -116,4 +118,18 @@ func contains(visited []Contact, contact Contact) bool {
 	   }
 	}
 	return false
+}
+func (kademlia *Kademlia) updateTTL(contact Contact, key string){
+	for _ = range time.Tick(time.Second * 5) {
+		fmt.Println("Pingin inside UPdateTTL: ", contact)
+		kademlia.net.createRPC("ping", &contact, "", []Contact{}, "", "")
+		fmt.Println("WE PINGINGG!")
+		var pong string
+		pong = <- kademlia.net.pongChannel 
+		if(pong == "pong"){
+			fmt.Println("Updataing TTL inside PONG")
+			kademlia.net.createRPC("UPDATE_TTL", &contact, "", []Contact{}, key, "")
+		}
+		/* kademlia.net.updateTTL(&contact, key) */
+	}
 }

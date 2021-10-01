@@ -164,6 +164,15 @@ func (network *Network) Listen(ip string, port string) {
 			fmt.Println("received FIND_VALUE_RETURN_NIL from "+ message.Sender.Address)
 			network.findValueChannel <- "nil"
 			network.senderChannel <- "nil"
+		case RPC == "UPDATE_TTL":
+			fmt.Println("Recieved UPDATE_TTL from: ", message.Sender.Address)
+			for i, s := range network.data{
+				if s.key == message.Key {
+					network.data[i].lastAccess = time.Now().Unix()
+					fmt.Println("Updating TTL: ", time.Now().Unix())
+				}
+			}
+
 		default:
 			fmt.Println("Invalid RPC")
 		}
@@ -192,6 +201,7 @@ func (network *Network) createRPC(rpc string, receiver *Contact, targetID string
 	}
 
 	connection.Write(convMsg)
+	fmt.Println("Done with the RPC")
 }
 
 func GetLocalIP() string {
