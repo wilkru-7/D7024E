@@ -41,3 +41,11 @@ func TestKademliaID_NewRandomKademliaID(t *testing.T) {
 		t.Error("Error")
 	}
 }
+
+func TestKademliaID_NewKademliaID(t *testing.T) {
+	id := NewKademliaID("00000000000000000000000000000000000")
+	id2 := NewKademliaID("0000000000000000000000000000000000000000")
+	if !id.Equals(id2) {
+		t.Error("Error")
+	}
+}

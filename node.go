@@ -2,15 +2,17 @@ package main
 
 // Importing packages
 import (
-	"github.com/wilkru-7/D7024E/d7024e"
-    "net"
-    "fmt"
-    "os"
     "bufio"
-    "strings"
     "encoding/hex"
+    "fmt"
     "github.com/labstack/echo/v4"
+    "github.com/wilkru-7/D7024E/d7024e"
+    "math/rand"
+    "net"
     "net/http"
+    "os"
+    "strings"
+    "time"
 )
 func scanner(kademlia *d7024e.Kademlia) {
     scanner := bufio.NewScanner(os.Stdin)
@@ -44,7 +46,7 @@ func scanner(kademlia *d7024e.Kademlia) {
   
 // Main function
 func main() {
-    
+    rand.Seed(time.Now().UnixNano())
     conn,_ := net.Dial("ip:icmp","google.com")
     fmt.Println(conn.LocalAddr())
     

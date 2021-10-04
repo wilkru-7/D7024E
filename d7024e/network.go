@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"time"
 	"sync"
+	"time"
 )
 const TTL = 20
 
@@ -39,14 +39,15 @@ type Data struct{
 	lastAccess int64
 }
 
-func dataContains(data []Data, hash KademliaID) bool {
+/*func dataContains(data []Data, hash KademliaID) bool {
 	for _, a := range data {
 	   if a.key == hash.String() {
 		  return true
 	   }
 	}
 	return false
-}
+}*/
+
 func dataGetIndex(data []Data, hash string) int {
 	for i, a := range data {
 	   if a.key == hash {
@@ -55,11 +56,14 @@ func dataGetIndex(data []Data, hash string) int {
 	}
 	return -1
 }
-func remove(data []Data, i int) []Data{
-    data[i] = data[len(data)-1]
-    return data[:len(data)-1]
-}
 
+func remove(data []Data, i int) []Data{
+	if len(data) > i && i > -1 {
+		data[i] = data[len(data)-1]
+		return data[:len(data)-1]
+	}
+	return data
+}
 
 func NewNetwork(contact *Contact, rt *RoutingTable) *Network {
 	network := &Network{}
@@ -231,13 +235,14 @@ func GetLocalIP() string {
 	}
 	return localIP
 }
+
 func (network *Network) checkTTL(data *Data, TTL int){
 	for now := range time.Tick(time.Second){
 		index := dataGetIndex(network.data, data.key)
 		if now.Unix() - network.data[index].lastAccess > int64(TTL){
 			if index != -1{
-				fmt.Println("REMOVING OBJECT: ", now.Unix())
 				network.data = remove(network.data, index)
+				fmt.Println("REMOVING OBJECT")
 				break
 			}
 		}
