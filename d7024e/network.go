@@ -39,15 +39,6 @@ type Data struct{
 	lastAccess int64
 }
 
-/*func dataContains(data []Data, hash KademliaID) bool {
-	for _, a := range data {
-	   if a.key == hash.String() {
-		  return true
-	   }
-	}
-	return false
-}*/
-
 func dataGetIndex(data []Data, hash string) int {
 	for i, a := range data {
 	   if a.key == hash {
@@ -55,6 +46,25 @@ func dataGetIndex(data []Data, hash string) int {
 	   }
 	}
 	return -1
+}
+
+func (network *Network) contains(key string) bool {
+	for _, s := range network.data{
+		if s.key == key {
+			return true
+		}
+	}
+	return false
+}
+
+func (network *Network) addData(key string, value string) {
+	data := Data{}
+	data.key = key
+	data.value = value
+	data.lastAccess = time.Now().Unix()
+	network.data = append(network.data, data)
+	fmt.Println("Creating data TTL: ", data.lastAccess)
+	go network.checkTTL(&data, TTL)
 }
 
 func remove(data []Data, i int) []Data{
@@ -122,22 +132,10 @@ func (network *Network) Listen(ip string, port string) {
 			network.c <- message.Contacts
 		case RPC == "STORE":
 			fmt.Println("received STORE from "+ message.Sender.Address)
-			exist := false
-			for _, s := range network.data{
-				if s.key == message.Key {
-					exist = true
-				}
-			}
-			if !exist{
-				data := Data{}
-				data.key = message.Key
-				data.value = message.Value
-				data.lastAccess = time.Now().Unix()
-				network.data = append(network.data, data)
-				fmt.Println("Creating data TTL: ", data.lastAccess)
-				go network.checkTTL(&data, TTL)
+			if !network.contains(message.Key){
+				network.addData(message.Key, message.Value)
 
-				network.createRPC("STORE_RETURN", &message.Sender, "", []Contact{}, data.key, data.value)
+				network.createRPC("STORE_RETURN", &message.Sender, "", []Contact{}, message.Key, message.Value)
 			}else{
 				network.createRPC("STORE_RETURN_FAIL", &message.Sender, "", []Contact{}, "", "")
 			}
@@ -200,6 +198,11 @@ func (network *Network) createRPC(rpc string, receiver *Contact, targetID string
 	
 	defer connection.Close()
 
+	connection.Write(network.createMessage(rpc, receiver, targetID, contacts, key, value))
+	network.mu.Unlock()
+}
+
+func (network *Network) createMessage(rpc string, receiver *Contact, targetID string, contacts []Contact, key string, value string) []byte{
 	message := &Message{}
 	message.Key = key
 	message.Value = value
@@ -209,14 +212,9 @@ func (network *Network) createRPC(rpc string, receiver *Contact, targetID string
 	message.TargetID = targetID
 	message.Contacts = contacts
 
-	convMsg, err := json.Marshal(message)
+	convMsg, _ := json.Marshal(message)
 
-	if err != nil{
-		fmt.Println("We got an error in createRPC")
-	}
-
-	connection.Write(convMsg)
-	network.mu.Unlock()
+	return convMsg
 }
 
 func GetLocalIP() string {

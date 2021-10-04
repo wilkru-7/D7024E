@@ -1,6 +1,7 @@
 package d7024e
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 )
@@ -55,5 +56,50 @@ func TestNetwork_checkTTL(t *testing.T) {
 	time.Sleep(3*time.Second)
 	if len(network.data) != 0{
 		t.Error("Error data is: ", network.data)
+	}
+}
+
+func TestNetwork_createMessage(t *testing.T) {
+	me := NewContact(NewKademliaID("0000000000000000000000000000000000000000"), "")
+	rt := NewRoutingTable(me)
+	network := NewNetwork(&me, rt)
+	message := network.createMessage("rpc", &me, "targetID", []Contact{}, "key", "value")
+	var m Message
+	json.Unmarshal(message, &m)
+
+	if m.RPC != "rpc"{
+		t.Error("Error rpc")
+	}
+}
+
+func TestNetwork_contains(t *testing.T) {
+	me := NewContact(NewKademliaID("0000000000000000000000000000000000000000"), "")
+	rt := NewRoutingTable(me)
+	network := NewNetwork(&me, rt)
+	data := Data{}
+	data.key = "key"
+	data.value = "value"
+	data.lastAccess = time.Now().Unix()
+	data1 := Data{}
+	data1.key = "key1"
+	data1.value = "value"
+	data1.lastAccess = time.Now().Unix()
+	network.data = []Data{data1, data}
+	if !network.contains("key") {
+		t.Error("Error no key match")
+	}
+
+	if network.contains("test") {
+		t.Error("Error wrong key match")
+	}
+}
+
+func TestNetwork_addData(t *testing.T) {
+	me := NewContact(NewKademliaID("0000000000000000000000000000000000000000"), "")
+	rt := NewRoutingTable(me)
+	network := NewNetwork(&me, rt)
+	network.addData("key", "value")
+	if (len(network.data)) != 1 {
+		t.Error("Error")
 	}
 }

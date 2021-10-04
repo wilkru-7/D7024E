@@ -63,14 +63,14 @@ func (kademlia *Kademlia) LookupData(hash string) []string {
 	counter := 0
 	for len(shortlist.contacts) > 0 {
 		kademlia.net.createRPC("FIND_VALUE", &shortlist.contacts[0], "", []Contact{}, hash, "")
-		visited.contacts = append(visited.contacts, shortlist.contacts[0])
+		//visited.contacts = append(visited.contacts, shortlist.contacts[0])
 		value = <- kademlia.net.findValueChannel
 		sender = <- kademlia.net.senderChannel
 		if value != "nil" {
 			return []string{value, sender}
 		}
 		k_triples = <- kademlia.net.c
-		for _, s := range k_triples{ 
+		/*for _, s := range k_triples{
 			if(!contains(visited.contacts, s) && !contains(shortlist.contacts, s)) {
 				s.CalcDistance(target.ID)
 				shortlist.contacts = append(shortlist.contacts, s)
@@ -80,7 +80,8 @@ func (kademlia *Kademlia) LookupData(hash string) []string {
 			shortlist.contacts = []Contact{}
 		} else {	
 			shortlist.contacts = shortlist.contacts[1:]
-		}
+		}*/
+		updateShortlist(k_triples, &shortlist, &visited, &target)
 		counter += 1
 	}
 	visited.Sort()
@@ -91,6 +92,21 @@ func (kademlia *Kademlia) LookupData(hash string) []string {
 		}
 	}
 	return result
+}
+
+func updateShortlist(k_triples []Contact, shortlist *ContactCandidates, visited *ContactCandidates, target *Contact) {
+	visited.contacts = append(visited.contacts, shortlist.contacts[0])
+	for _, s := range k_triples{
+		if(!contains(visited.contacts, s) && !contains(shortlist.contacts, s)) {
+			s.CalcDistance(target.ID)
+			shortlist.contacts = append(shortlist.contacts, s)
+		}
+	}
+	if len(shortlist.contacts) == 1 {
+		shortlist.contacts = []Contact{}
+	} else {
+		shortlist.contacts = shortlist.contacts[1:]
+	}
 }
 
 //data []bytes
