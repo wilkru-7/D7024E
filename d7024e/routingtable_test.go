@@ -24,7 +24,7 @@ func TestRoutingTable_AddContact(t *testing.T) {
 	rt := NewRoutingTable(NewContact(NewKademliaID("0000000000000000000000000000000000000000"), ""))
 	contact := NewContact(NewKademliaID("0000000000000000000000000000000000000001"), "")
 	rt.AddContact(contact)
-	if rt.getBucketIndex(contact.ID) != 159 {
+	if rt.GetBucketIndex(contact.ID) != 159 {
 		t.Error("Error")
 	}
 }
@@ -33,7 +33,7 @@ func TestRoutingTable_getBucketIndex(t *testing.T) {
 	rt := NewRoutingTable(NewContact(NewKademliaID("0000000000000000000000000000000000000000"), ""))
 	contact := NewContact(NewKademliaID("0000000000000000000000000000000000000000"), "")
 	rt.AddContact(contact)
-	if rt.getBucketIndex(contact.ID) != 159 {
+	if rt.GetBucketIndex(contact.ID) != 159 {
 		t.Error("Error")
 	}
 }

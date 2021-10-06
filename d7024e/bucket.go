@@ -12,7 +12,7 @@ type bucket struct {
 }
 
 // newBucket returns a new instance of a bucket
-func newBucket() *bucket {
+func NewBucket() *bucket {
 	bucket := &bucket{}
 	bucket.list = list.New()
 	return bucket

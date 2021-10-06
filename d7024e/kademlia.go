@@ -35,12 +35,12 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 	closestNode := shortlist.contacts[0]
 	var visited []Contact
 	for _, contact := range shortlist.contacts {
-		if(!contains(visited, contact)){
-			kademlia.net.createRPC("ping", &contact, "", []Contact{}, "", "")
+		if(!Contains(visited, contact)){
+			kademlia.net.CreateRPC("ping", &contact, "", []Contact{}, "", "")
 			var pong string
 			pong = <- kademlia.net.pongChannel 
 			if(pong == "pong"){
-				kademlia.net.createRPC("FIND_NODE", &contact, target.ID.String(), []Contact{}, "", "")
+				kademlia.net.CreateRPC("FIND_NODE", &contact, target.ID.String(), []Contact{}, "", "")
 				visited = append(visited, contact)
 				var k_triples []Contact
 				k_triples = <- kademlia.net.c
@@ -77,14 +77,14 @@ func (kademlia *Kademlia) LookupData(hash string) []string {
 	var visited ContactCandidates
 	counter := 0
 	for len(shortlist.contacts) > 0 {
-		kademlia.net.createRPC("FIND_VALUE", &shortlist.contacts[0], "", []Contact{}, hash, "")
+		kademlia.net.CreateRPC("FIND_VALUE", &shortlist.contacts[0], "", []Contact{}, hash, "")
 		value = <- kademlia.net.findValueChannel
 		sender = <- kademlia.net.senderChannel
 		if value != "nil" {
 			return []string{value, sender}
 		}
 		k_triples = <- kademlia.net.c
-		updateShortlist(k_triples, &shortlist, &visited, &target)
+		UpdateShortlist(k_triples, &shortlist, &visited, &target)
 		counter += 1
 	}
 	visited.Sort()
@@ -102,10 +102,10 @@ func (kademlia *Kademlia) LookupData(hash string) []string {
  * the search.
  * 
  */
-func updateShortlist(k_triples []Contact, shortlist *ContactCandidates, visited *ContactCandidates, target *Contact) {
+func UpdateShortlist(k_triples []Contact, shortlist *ContactCandidates, visited *ContactCandidates, target *Contact) {
 	visited.contacts = append(visited.contacts, shortlist.contacts[0])
 	for _, s := range k_triples{
-		if(!contains(visited.contacts, s) && !contains(shortlist.contacts, s)) {
+		if(!Contains(visited.contacts, s) && !Contains(shortlist.contacts, s)) {
 			s.CalcDistance(target.ID)
 			shortlist.contacts = append(shortlist.contacts, s)
 		}
@@ -128,14 +128,14 @@ func (kademlia *Kademlia) Store(key *KademliaID, value string) bool {
 	var response bool
 	successful := false
 	for _, contact := range contacts{
-		kademlia.net.createRPC("STORE", &contact, "", []Contact{}, key.String(), value)
+		kademlia.net.CreateRPC("STORE", &contact, "", []Contact{}, key.String(), value)
 		response = <- kademlia.net.storeChannel
 		if(response){
 			fmt.Println("Store completed")
-			if (!containsString(kademlia.keys, key.String())) {
+			if (!ContainsString(kademlia.keys, key.String())) {
 				kademlia.keys = append(kademlia.keys, key.String())
 			}
-			go kademlia.updateTTL(contact, key.String())
+			go kademlia.UpdateTTL(contact, key.String())
 			successful = true
 		}else{
 			fmt.Println("Store failed")
@@ -149,14 +149,14 @@ func (kademlia *Kademlia) Store(key *KademliaID, value string) bool {
  * on the keys present in the key array of the kademlia.
  * 
  */
- func (kademlia *Kademlia) updateTTL(contact Contact, key string){
+ func (kademlia *Kademlia) UpdateTTL(contact Contact, key string){
 	for _ = range time.Tick(time.Second * 5) {
-		if containsString(kademlia.keys, key) {
-			kademlia.net.createRPC("ping", &contact, "", []Contact{}, "", "")
+		if ContainsString(kademlia.keys, key) {
+			kademlia.net.CreateRPC("ping", &contact, "", []Contact{}, "", "")
 			var pong string
 			pong = <- kademlia.net.pongChannel 
 			if(pong == "pong"){
-				kademlia.net.createRPC("UPDATE_TTL", &contact, "", []Contact{}, key, "")
+				kademlia.net.CreateRPC("UPDATE_TTL", &contact, "", []Contact{}, key, "")
 			}
 		}
 	}
@@ -183,7 +183,7 @@ func (kademlia *Kademlia) Forget(key string){
  * Checks if a contact is present in a contact array.
  * 
  */
-func contains(visited []Contact, contact Contact) bool {
+func Contains(visited []Contact, contact Contact) bool {
 	for _, a := range visited {
 	   if a.ID.Equals(contact.ID){
 		  return true
@@ -196,7 +196,7 @@ func contains(visited []Contact, contact Contact) bool {
  * Checks if a string is present in a string array.
  * 
  */
-func containsString(visited []string, key string) bool {
+func ContainsString(visited []string, key string) bool {
 	for _, a := range visited {
 	   if a == key{
 		  return true

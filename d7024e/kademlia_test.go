@@ -40,20 +40,20 @@ func TestKademlia_Contains(t *testing.T) {
 	contact := NewContact(NewKademliaID("0000000000000000000000000000000000000000"), "")
 	contact2 := NewContact(NewKademliaID("0000000000000000000000000000000000000001"), "")
 	contacts := []Contact{contact}
-	if !contains(contacts, contact) {
+	if !Contains(contacts, contact) {
 		t.Error("Error")
 	}
-	if contains(contacts, contact2) {
+	if Contains(contacts, contact2) {
 		t.Error("Error")
 	}
 }
 
 func TestKademlia_ContainsString(t *testing.T) {
 	strings := []string{"test"}
-	if !containsString(strings, "test") {
+	if !ContainsString(strings, "test") {
 		t.Error("Error")
 	}
-	if containsString(strings, "test2") {
+	if ContainsString(strings, "test2") {
 		t.Error("Error")
 	}
 }
@@ -70,14 +70,14 @@ func TestKademlia_updateShortlist(t *testing.T) {
 	shortlist.contacts = []Contact{contact}
 	visited.contacts = []Contact{contact2, contact3}
 	k_triples := []Contact{contact2, contact3}
-	updateShortlist(k_triples, &shortlist, &visited, &target)
+	UpdateShortlist(k_triples, &shortlist, &visited, &target)
 	if len(visited.contacts) != 3 && len(shortlist.contacts) != 0 {
 		t.Error("Error")
 	}
 	shortlist.contacts = []Contact{contact}
 	visited.contacts = []Contact{contact2, contact3}
 	k_triples = []Contact{contact4, contact5}
-	updateShortlist(k_triples, &shortlist, &visited, &target)
+	UpdateShortlist(k_triples, &shortlist, &visited, &target)
 	if len(visited.contacts) != 3 && len(shortlist.contacts) != 2 {
 		t.Error("Error")
 	}

@@ -5,7 +5,7 @@ import (
 )
 
 func TestBucket_Len(t *testing.T) {
-	bucket := newBucket()
+	bucket := NewBucket()
 	contact := NewContact(NewKademliaID("0000000000000000000000000000000000000000"), "")
 	bucket.list.PushFront(contact)
 	if bucket.Len() != 1 {
@@ -14,7 +14,7 @@ func TestBucket_Len(t *testing.T) {
 }
 
 func TestBucket_AddContact(t *testing.T) {
-	bucket := newBucket()
+	bucket := NewBucket()
 	contact := NewContact(NewKademliaID("0000000000000000000000000000000000000000"), "")
 	bucket.AddContact(contact)
 	//Check that it places it in front and not twice
@@ -25,7 +25,7 @@ func TestBucket_AddContact(t *testing.T) {
 }
 
 func TestBucket_GetContactAndCalcDistance(t *testing.T) {
-	bucket := newBucket()
+	bucket := NewBucket()
 	contact := NewContact(NewKademliaID("0000000000000000000000000000000000000000"), "")
 	bucket.AddContact(contact)
 	array := bucket.GetContactAndCalcDistance(NewKademliaID("0000000000000000000000000000000000000001"))
