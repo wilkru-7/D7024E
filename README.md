@@ -16,12 +16,14 @@ docker build --tag kademlia .
 ```bash
 docker-compose up
 ```
+
+(To edit the number of containers used, open the ``docker-compose.yml`` file and edit ``replicas: X`` on line 38)
 ## Command Line Interface
-To access the CLI from a container, first complete step 1-3 above. Then open another terminal and use the following command:
+To access the CLI from a container, first complete steps 1-3 of the setup process. Then open another terminal and use the following command:
 ```bash
 docker attach d7024e_kademliaNodes_ID
 ```
-The "ID" in the command is to be replaced by the number of the container you want to enter.
+The "ID" in the command is to be replaced by the number of the container you want to access.
 ### put
 ```bash
 put yourtext
@@ -37,7 +39,14 @@ After running the get command, the text corresponding to "yourhash" will be prin
 forget yourhash
 ```
 After running the forget command, the TTL of the data object corresponding to "yourhash" will no longer be updated and the object will eventually be removed.
+### exit
+```bash
+exit
+```
+After running the exit command, the node terminates.
 ## RESTful HTTP Interface
+### POST
+### GET
 ## Testing
 In order to run the test files, navigate to the ``d7024e`` folder and run the following command:
 ```bash
