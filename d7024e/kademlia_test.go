@@ -18,6 +18,22 @@ func TestKademlia_Forget(t *testing.T) {
 	if len(kademlia.keys) != 2 {
 		t.Error("Error")
 	}
+	if kademlia.alpha != 3{
+		t.Error("Error")
+	}
+	if kademlia.rt != *rt {
+		t.Error("Error")
+	}
+	if kademlia.net != network{
+		t.Error("Error")
+	}
+	if NewKademlia(*rt, network) == kademlia{
+		t.Error("Error")
+	}
+	/*kademlia.rt = rt
+	kademlia.alpha = 3
+	kademlia.net = net
+	kademlia.keys = []string{}*/
 }
 
 func TestKademlia_Contains(t *testing.T) {

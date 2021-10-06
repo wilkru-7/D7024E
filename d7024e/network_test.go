@@ -103,3 +103,18 @@ func TestNetwork_addData(t *testing.T) {
 		t.Error("Error")
 	}
 }
+
+func TestNetwork_ping(t *testing.T) {
+	me := NewContact(NewKademliaID("0000000000000000000000000000000000000000"), "")
+	rt := NewRoutingTable(me)
+	network := NewNetwork(&me, rt)
+
+	message := network.createMessage("ping", &me, "", []Contact{}, "", "")
+	var m Message
+	json.Unmarshal(message, &m)
+
+	network.pickRPC(m)
+	if (len(network.rt.FindClosestContacts(me.ID, 3))) != 1 {
+		t.Error("Error")
+	}
+}

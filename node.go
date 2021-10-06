@@ -14,7 +14,7 @@ import (
     "strings"
     "time"
 )
-func scanner(kademlia *d7024e.Kademlia) {
+func startCLI(kademlia *d7024e.Kademlia) {
     scanner := bufio.NewScanner(os.Stdin)
     for scanner.Scan() {
         text := strings.Split(scanner.Text(), " ")
@@ -56,7 +56,7 @@ func main() {
         network := d7024e.NewNetwork(&me, rt)
         kademlia := d7024e.NewKademlia(*rt, network)
         go startAPI(kademlia)
-        go scanner(kademlia)
+        go startCLI(kademlia)
         network.Listen("127.0.0.1", "8080")
     } else if (conn.LocalAddr().String() == "172.19.0.3") {
         known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.19.0.2:8080") 
@@ -67,7 +67,7 @@ func main() {
         kademlia := d7024e.NewKademlia(*rt, network)
         go startAPI(kademlia)
         go kademlia.LookupContact(&me)
-        go scanner(kademlia)
+        go startCLI(kademlia)
         network.Listen("127.0.0.1", "8080")
     } else {
         known := d7024e.NewContact(d7024e.NewKademliaID("0000000000000000000000000000000000000000"), "172.19.0.2:8080") 
@@ -78,7 +78,7 @@ func main() {
         kademlia := d7024e.NewKademlia(*rt, network)
         go startAPI(kademlia)
         go kademlia.LookupContact(&me)
-        go scanner(kademlia)
+        go startCLI(kademlia)
         network.Listen("127.0.0.1", "8080")
     }
   

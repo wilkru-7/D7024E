@@ -49,3 +49,11 @@ func TestKademliaID_NewKademliaID(t *testing.T) {
 		t.Error("Error")
 	}
 }
+
+func TestNewKademliaID_String(t *testing.T) {
+	id := NewKademliaID("00000000000000000000000000000000000")
+	string := id.String()
+	if string != "0000000000000000000000000000000000000000"{
+		t.Error("Error")
+	}
+}

@@ -39,42 +39,6 @@ type Data struct{
 	lastAccess int64
 }
 
-func dataGetIndex(data []Data, hash string) int {
-	for i, a := range data {
-	   if a.key == hash {
-		  return i
-	   }
-	}
-	return -1
-}
-
-func (network *Network) contains(key string) bool {
-	for _, s := range network.data{
-		if s.key == key {
-			return true
-		}
-	}
-	return false
-}
-
-func (network *Network) addData(key string, value string) {
-	data := Data{}
-	data.key = key
-	data.value = value
-	data.lastAccess = time.Now().Unix()
-	network.data = append(network.data, data)
-	fmt.Println("Creating data TTL: ", data.lastAccess)
-	go network.checkTTL(&data, TTL)
-}
-
-func remove(data []Data, i int) []Data{
-	if len(data) > i && i > -1 {
-		data[i] = data[len(data)-1]
-		return data[:len(data)-1]
-	}
-	return data
-}
-
 func NewNetwork(contact *Contact, rt *RoutingTable) *Network {
 	network := &Network{}
 	network.contact = contact
@@ -104,7 +68,6 @@ func (network *Network) Listen(ip string, port string) {
 		buffer := make([]byte, 4096*2)
 		
 		length, _, err := connection.ReadFromUDP(buffer)
-		
 
 		if err != nil {
 			fmt.Println("error in listen")
@@ -112,76 +75,78 @@ func (network *Network) Listen(ip string, port string) {
 
 		buffer = buffer[:length]
 		err = json.Unmarshal(buffer, &message)
+		network.pickRPC(message)
 
-		RPC := message.RPC
-		switch {
-		case RPC == "ping":
-			fmt.Println("received ping from "+ message.Sender.Address)
-			network.rt.AddContact(message.Sender)
-			network.createRPC("pong", &message.Sender, "", []Contact{}, "", "")
-		case RPC == "pong":
-			fmt.Println("received pong from "+ message.Sender.Address)
-			network.rt.AddContact(message.Sender)
-			network.pongChannel <- "pong"
-		case RPC == "FIND_NODE":
-			fmt.Println("received FIND_NODE from "+ message.Sender.Address)
-			k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.TargetID), 3)
+	}
+}
+func (network *Network) pickRPC(message Message){
+	RPC := message.RPC
+	switch {
+	case RPC == "ping":
+		fmt.Println("received ping from "+ message.Sender.Address)
+		network.rt.AddContact(message.Sender)
+		network.createRPC("pong", &message.Sender, "", []Contact{}, "", "")
+	case RPC == "pong":
+		fmt.Println("received pong from "+ message.Sender.Address)
+		network.rt.AddContact(message.Sender)
+		network.pongChannel <- "pong"
+	case RPC == "FIND_NODE":
+		fmt.Println("received FIND_NODE from "+ message.Sender.Address)
+		k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.TargetID), 3)
+		network.createRPC("FIND_NODE_RETURN", &message.Sender, "", k_contacts, "", "")
+	case RPC == "FIND_NODE_RETURN":
+		fmt.Println("received FIND_NODE_RETURN from "+ message.Sender.Address)
+		network.c <- message.Contacts
+	case RPC == "STORE":
+		fmt.Println("received STORE from "+ message.Sender.Address)
+		if !network.contains(message.Key){
+			network.addData(message.Key, message.Value)
+
+			network.createRPC("STORE_RETURN", &message.Sender, "", []Contact{}, message.Key, message.Value)
+		}else{
+			network.createRPC("STORE_RETURN_FAIL", &message.Sender, "", []Contact{}, "", "")
+		}
+	case RPC == "STORE_RETURN":
+		network.storeChannel <- true
+	case RPC == "STORE_RETURN_FAIL":
+		network.storeChannel <- false
+	case RPC == "FIND_VALUE":
+		fmt.Println("received FIND_VALUE from "+ message.Sender.Address)
+		if len(network.data) == 0 {
+			network.createRPC("FIND_VALUE_RETURN_NIL", &message.Sender, "", []Contact{}, "", "")
+			k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.Key), 3)
 			network.createRPC("FIND_NODE_RETURN", &message.Sender, "", k_contacts, "", "")
-		case RPC == "FIND_NODE_RETURN":
-			fmt.Println("received FIND_NODE_RETURN from "+ message.Sender.Address)
-			network.c <- message.Contacts
-		case RPC == "STORE":
-			fmt.Println("received STORE from "+ message.Sender.Address)
-			if !network.contains(message.Key){
-				network.addData(message.Key, message.Value)
-
-				network.createRPC("STORE_RETURN", &message.Sender, "", []Contact{}, message.Key, message.Value)
-			}else{
-				network.createRPC("STORE_RETURN_FAIL", &message.Sender, "", []Contact{}, "", "")
-			}
-		case RPC == "STORE_RETURN":
-			network.storeChannel <- true
-		case RPC == "STORE_RETURN_FAIL":
-			network.storeChannel <- false
-		case RPC == "FIND_VALUE":
-			fmt.Println("received FIND_VALUE from "+ message.Sender.Address)
-			if len(network.data) == 0 {
-				network.createRPC("FIND_VALUE_RETURN_NIL", &message.Sender, "", []Contact{}, "", "")
-				k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.Key), 3)
-				network.createRPC("FIND_NODE_RETURN", &message.Sender, "", k_contacts, "", "")
-			} else {
-				for i, s := range network.data{
-					if s.key == message.Key {
-						network.data[i].lastAccess = time.Now().Unix()
-						fmt.Println("Updating TTL: ", time.Now().Unix())
-						network.createRPC("FIND_VALUE_RETURN", &message.Sender, "", []Contact{}, "", s.value)
-					} else {
-						k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.Key), 3)
-						network.createRPC("FIND_VALUE_RETURN_NIL", &message.Sender, "", []Contact{}, "", "")
-						network.createRPC("FIND_NODE_RETURN", &message.Sender, "", k_contacts, "", "")
-					}
-				}
-			}
-		case RPC == "FIND_VALUE_RETURN":
-			fmt.Println("received FIND_VALUE_RETURN from "+ message.Sender.Address)
-			network.findValueChannel <- message.Value 
-			network.senderChannel <- message.Sender.String()
-		case RPC == "FIND_VALUE_RETURN_NIL":
-			fmt.Println("received FIND_VALUE_RETURN_NIL from "+ message.Sender.Address)
-			network.findValueChannel <- "nil"
-			network.senderChannel <- "nil"
-		case RPC == "UPDATE_TTL":
-			fmt.Println("Recieved UPDATE_TTL from: ", message.Sender.Address)
+		} else {
 			for i, s := range network.data{
-				if s.key == message.Key{
+				if s.key == message.Key {
 					network.data[i].lastAccess = time.Now().Unix()
 					fmt.Println("Updating TTL: ", time.Now().Unix())
+					network.createRPC("FIND_VALUE_RETURN", &message.Sender, "", []Contact{}, "", s.value)
+				} else {
+					k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.Key), 3)
+					network.createRPC("FIND_VALUE_RETURN_NIL", &message.Sender, "", []Contact{}, "", "")
+					network.createRPC("FIND_NODE_RETURN", &message.Sender, "", k_contacts, "", "")
 				}
 			}
-
-		default:
-			fmt.Println("Invalid RPC")
 		}
+	case RPC == "FIND_VALUE_RETURN":
+		fmt.Println("received FIND_VALUE_RETURN from "+ message.Sender.Address)
+		network.findValueChannel <- message.Value
+		network.senderChannel <- message.Sender.String()
+	case RPC == "FIND_VALUE_RETURN_NIL":
+		fmt.Println("received FIND_VALUE_RETURN_NIL from "+ message.Sender.Address)
+		network.findValueChannel <- "nil"
+		network.senderChannel <- "nil"
+	case RPC == "UPDATE_TTL":
+		fmt.Println("Recieved UPDATE_TTL from: ", message.Sender.Address)
+		for i, s := range network.data{
+			if s.key == message.Key{
+				network.data[i].lastAccess = time.Now().Unix()
+				fmt.Println("Updating TTL: ", time.Now().Unix())
+			}
+		}
+	default:
+		fmt.Println("Invalid RPC")
 	}
 }
 
@@ -245,4 +210,40 @@ func (network *Network) checkTTL(data *Data, TTL int){
 			}
 		}
 	}
+}
+
+func dataGetIndex(data []Data, hash string) int {
+	for i, a := range data {
+		if a.key == hash {
+			return i
+		}
+	}
+	return -1
+}
+
+func (network *Network) contains(key string) bool {
+	for _, s := range network.data{
+		if s.key == key {
+			return true
+		}
+	}
+	return false
+}
+
+func (network *Network) addData(key string, value string) {
+	data := Data{}
+	data.key = key
+	data.value = value
+	data.lastAccess = time.Now().Unix()
+	network.data = append(network.data, data)
+	fmt.Println("Creating data TTL: ", data.lastAccess)
+	go network.checkTTL(&data, TTL)
+}
+
+func remove(data []Data, i int) []Data{
+	if len(data) > i && i > -1 {
+		data[i] = data[len(data)-1]
+		return data[:len(data)-1]
+	}
+	return data
 }
