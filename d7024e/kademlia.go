@@ -11,6 +11,10 @@ type Kademlia struct {
 	keys []string
 }
 
+/*
+ * Creates and returns a new instance of a kademlia.
+ * 
+ */
 func NewKademlia(rt RoutingTable, net *Network) *Kademlia {
 	kademlia := &Kademlia{}
 	kademlia.rt = rt
@@ -20,6 +24,11 @@ func NewKademlia(rt RoutingTable, net *Network) *Kademlia {
 	return kademlia
 }
 
+/*
+ * LookupContact takes a target contact as an argument and finds
+ * the closest nodes to it by traversing through the network.
+ * 
+ */
 func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 	var shortlist ContactCandidates
 	shortlist.contacts = kademlia.rt.FindClosestContacts(target.ID, kademlia.alpha)
@@ -53,6 +62,12 @@ func (kademlia *Kademlia) LookupContact(target *Contact) []Contact {
 	}
 }
 
+/*
+ * LookupData takes a hash as an argument and tries to find the 
+ * corresponding value by looking through the contacts.
+ * If no value is found the K closest contacts are returned instead.
+ * 
+ */
 func (kademlia *Kademlia) LookupData(hash string) []string {
 	var shortlist ContactCandidates
 	target := NewContact(NewKademliaID(hash), "")
@@ -63,24 +78,12 @@ func (kademlia *Kademlia) LookupData(hash string) []string {
 	counter := 0
 	for len(shortlist.contacts) > 0 {
 		kademlia.net.createRPC("FIND_VALUE", &shortlist.contacts[0], "", []Contact{}, hash, "")
-		//visited.contacts = append(visited.contacts, shortlist.contacts[0])
 		value = <- kademlia.net.findValueChannel
 		sender = <- kademlia.net.senderChannel
 		if value != "nil" {
 			return []string{value, sender}
 		}
 		k_triples = <- kademlia.net.c
-		/*for _, s := range k_triples{
-			if(!contains(visited.contacts, s) && !contains(shortlist.contacts, s)) {
-				s.CalcDistance(target.ID)
-				shortlist.contacts = append(shortlist.contacts, s)
-			}
-		}
-		if len(shortlist.contacts) == 1 {
-			shortlist.contacts = []Contact{}
-		} else {	
-			shortlist.contacts = shortlist.contacts[1:]
-		}*/
 		updateShortlist(k_triples, &shortlist, &visited, &target)
 		counter += 1
 	}
@@ -94,6 +97,11 @@ func (kademlia *Kademlia) LookupData(hash string) []string {
 	return result
 }
 
+/*
+ * Function used by LookupData to update the shortlist used in
+ * the search.
+ * 
+ */
 func updateShortlist(k_triples []Contact, shortlist *ContactCandidates, visited *ContactCandidates, target *Contact) {
 	visited.contacts = append(visited.contacts, shortlist.contacts[0])
 	for _, s := range k_triples{
@@ -109,7 +117,11 @@ func updateShortlist(k_triples []Contact, shortlist *ContactCandidates, visited 
 	}
 }
 
-//data []bytes
+/*
+ * Tries to store the wanted key and value pair on the contacts closest
+ * to the key hash.
+ * 
+ */
 func (kademlia *Kademlia) Store(key *KademliaID, value string) bool {
 	target := NewContact(key, "")
 	contacts := kademlia.LookupContact(&target)
@@ -132,25 +144,12 @@ func (kademlia *Kademlia) Store(key *KademliaID, value string) bool {
 	return successful
 }
 
-func contains(visited []Contact, contact Contact) bool {
-	for _, a := range visited {
-	   if a.ID.Equals(contact.ID){
-		  return true
-	   }
-	}
-	return false
-}
-
-func containsString(visited []string, key string) bool {
-	for _, a := range visited {
-	   if a == key{
-		  return true
-	   }
-	}
-	return false
-}
-
-func (kademlia *Kademlia) updateTTL(contact Contact, key string){
+/*
+ * updateTTL is called from Store asynchronously. It updates the TTL
+ * on the keys present in the key array of the kademlia.
+ * 
+ */
+ func (kademlia *Kademlia) updateTTL(contact Contact, key string){
 	for _ = range time.Tick(time.Second * 5) {
 		if containsString(kademlia.keys, key) {
 			kademlia.net.createRPC("ping", &contact, "", []Contact{}, "", "")
@@ -164,6 +163,12 @@ func (kademlia *Kademlia) updateTTL(contact Contact, key string){
 	
 }
 
+/*
+ * Function called when the forget CLI command is executed. 
+ * Removes the corresponding key from the kademlia key array
+ * which stops its TTL from refreshing.
+ * 
+ */
 func (kademlia *Kademlia) Forget(key string){
 	for i, a := range kademlia.keys {
 		if a == key{
@@ -172,4 +177,30 @@ func (kademlia *Kademlia) Forget(key string){
 			fmt.Println("Removing key: " , a)
 		}
 	}
+}
+
+/*
+ * Checks if a contact is present in a contact array.
+ * 
+ */
+func contains(visited []Contact, contact Contact) bool {
+	for _, a := range visited {
+	   if a.ID.Equals(contact.ID){
+		  return true
+	   }
+	}
+	return false
+}
+
+/*
+ * Checks if a string is present in a string array.
+ * 
+ */
+func containsString(visited []string, key string) bool {
+	for _, a := range visited {
+	   if a == key{
+		  return true
+	   }
+	}
+	return false
 }

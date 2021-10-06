@@ -1,6 +1,7 @@
 package d7024e
 
-//https://github.com/holwech/UDP-module/blob/e03eccee9bfb5585d2c27c7e153fef273285099c/communication.go#L15
+/* Some of the functionality in the listen and createRPC functions are inspired by this site:
+https://github.com/holwech/UDP-module/blob/e03eccee9bfb5585d2c27c7e153fef273285099c/communication.go#L15 */
 
 import (
 	"encoding/json"
@@ -9,6 +10,7 @@ import (
 	"sync"
 	"time"
 )
+
 const TTL = 20
 
 type Network struct {
@@ -39,6 +41,10 @@ type Data struct{
 	lastAccess int64
 }
 
+/*
+ * Creates and return a new instance of a network.
+ * 
+ */
 func NewNetwork(contact *Contact, rt *RoutingTable) *Network {
 	network := &Network{}
 	network.contact = contact
@@ -51,7 +57,13 @@ func NewNetwork(contact *Contact, rt *RoutingTable) *Network {
 	return network
 }
 
-func (network *Network) Listen(ip string, port string) {
+/*
+ * Listening function that takes a port as argument. It sets up a
+ * listening connection on the local IP address from the port.
+ * Handles the incoming messages and sends the corresponding RPC:s.
+ * 
+ */
+func (network *Network) Listen(port string) {
 	localAddress, err1 := net.ResolveUDPAddr("udp", GetLocalIP()+":"+port)
 	if err1 != nil {
 		fmt.Println(err1)
@@ -61,6 +73,7 @@ func (network *Network) Listen(ip string, port string) {
 	if err2 != nil {
 		fmt.Println(err2)
 	}
+
 	defer connection.Close()
 
 	for {
@@ -79,6 +92,12 @@ func (network *Network) Listen(ip string, port string) {
 
 	}
 }
+
+/*
+ * Takes a message as argument and takes different actions based
+ * on the wanted RPC type. Creates RPC:s, sends values over the channels, etc.
+ * 
+ */
 func (network *Network) pickRPC(message Message){
 	RPC := message.RPC
 	switch {
@@ -150,6 +169,12 @@ func (network *Network) pickRPC(message Message){
 	}
 }
 
+/*
+ * Creates a RPC based on the incoming arguments. This process is 
+ * incapsuled with a mutex lock to prevent it from trying to
+ * create a connection that already exists.
+ * 
+ */
 func (network *Network) createRPC(rpc string, receiver *Contact, targetID string, contacts []Contact, key string, value string) {
 	network.mu.Lock()
 	contactAddress, _ := net.ResolveUDPAddr("udp", receiver.Address)
@@ -167,6 +192,11 @@ func (network *Network) createRPC(rpc string, receiver *Contact, targetID string
 	network.mu.Unlock()
 }
 
+/*
+ * Function used by createRPC. Takes the same arguments and returns the
+ * message in the form of a []byte.
+ * 
+ */
 func (network *Network) createMessage(rpc string, receiver *Contact, targetID string, contacts []Contact, key string, value string) []byte{
 	message := &Message{}
 	message.Key = key
@@ -182,6 +212,11 @@ func (network *Network) createMessage(rpc string, receiver *Contact, targetID st
 	return convMsg
 }
 
+/*
+ * Function that returns the local IP address as a string.
+ * This function is copied from the following site:
+ * https://github.com/holwech/UDP-module/blob/e03eccee9bfb5585d2c27c7e153fef273285099c/communication.go#L15
+ */
 func GetLocalIP() string {
 	var localIP string
 	addr, err := net.InterfaceAddrs()
@@ -199,6 +234,11 @@ func GetLocalIP() string {
 	return localIP
 }
 
+/*
+ * Function called by addData asynchronously. Checks if the 
+ * data object is to be removed or not.
+ * 
+ */
 func (network *Network) checkTTL(data *Data, TTL int){
 	for now := range time.Tick(time.Second){
 		index := dataGetIndex(network.data, data.key)
@@ -212,25 +252,12 @@ func (network *Network) checkTTL(data *Data, TTL int){
 	}
 }
 
-func dataGetIndex(data []Data, hash string) int {
-	for i, a := range data {
-		if a.key == hash {
-			return i
-		}
-	}
-	return -1
-}
-
-func (network *Network) contains(key string) bool {
-	for _, s := range network.data{
-		if s.key == key {
-			return true
-		}
-	}
-	return false
-}
-
-func (network *Network) addData(key string, value string) {
+/*
+ * Takes a key and value as arguments and add these to the data 
+ * array of the network. 
+ * 
+ */
+ func (network *Network) addData(key string, value string) {
 	data := Data{}
 	data.key = key
 	data.value = value
@@ -240,6 +267,37 @@ func (network *Network) addData(key string, value string) {
 	go network.checkTTL(&data, TTL)
 }
 
+/*
+ * Returns the index of a key in a data array.
+ * 
+ */
+func dataGetIndex(data []Data, hash string) int {
+	for i, a := range data {
+		if a.key == hash {
+			return i
+		}
+	}
+	return -1
+}
+
+/*
+ * Checks if a key is present in the data array of the network.
+ * 
+ */
+func (network *Network) contains(key string) bool {
+	for _, s := range network.data{
+		if s.key == key {
+			return true
+		}
+	}
+	return false
+}
+
+/*
+ * Removes the data at index i from the network and returns
+ * the new array.
+ * 
+ */
 func remove(data []Data, i int) []Data{
 	if len(data) > i && i > -1 {
 		data[i] = data[len(data)-1]
