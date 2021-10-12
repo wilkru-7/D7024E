@@ -1,0 +1,922 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>d7024e: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/wilkru-7/D7024E/d7024e/bucket.go (100.0%)</option>
+				
+				<option value="file1">github.com/wilkru-7/D7024E/d7024e/contact.go (100.0%)</option>
+				
+				<option value="file2">github.com/wilkru-7/D7024E/d7024e/kademlia.go (28.7%)</option>
+				
+				<option value="file3">github.com/wilkru-7/D7024E/d7024e/kademliaid.go (100.0%)</option>
+				
+				<option value="file4">github.com/wilkru-7/D7024E/d7024e/network.go (34.1%)</option>
+				
+				<option value="file5">github.com/wilkru-7/D7024E/d7024e/routingtable.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package d7024e
+
+import (
+        "container/list"
+        //"fmt"
+)
+
+// bucket definition
+// contains a List
+type bucket struct {
+        list *list.List
+}
+
+// newBucket returns a new instance of a bucket
+func NewBucket() *bucket <span class="cov8" title="1">{
+        bucket := &amp;bucket{}
+        bucket.list = list.New()
+        return bucket
+}</span>
+
+// AddContact adds the Contact to the front of the bucket
+// or moves it to the front of the bucket if it already existed
+func (bucket *bucket) AddContact(contact Contact) <span class="cov8" title="1">{
+        //fmt.Println("before adding: " , bucket.list.Len())
+        var element *list.Element
+        for e := bucket.list.Front(); e != nil; e = e.Next() </span><span class="cov8" title="1">{
+                nodeID := e.Value.(Contact).ID
+
+                if (contact).ID.Equals(nodeID) </span><span class="cov8" title="1">{
+                        element = e
+                }</span>
+        }
+
+        <span class="cov8" title="1">if element == nil </span><span class="cov8" title="1">{
+                if bucket.list.Len() &lt; bucketSize </span><span class="cov8" title="1">{
+                        bucket.list.PushFront(contact)
+                }</span>
+        } else<span class="cov8" title="1"> {
+                bucket.list.MoveToFront(element)
+        }</span>
+        //fmt.Println("after adding : " , bucket.list.Len())
+}
+
+// GetContactAndCalcDistance returns an array of Contacts where 
+// the distance has already been calculated
+func (bucket *bucket) GetContactAndCalcDistance(target *KademliaID) []Contact <span class="cov8" title="1">{
+        var contacts []Contact
+
+        for elt := bucket.list.Front(); elt != nil; elt = elt.Next() </span><span class="cov8" title="1">{
+                contact := elt.Value.(Contact)
+                contact.CalcDistance(target)
+                contacts = append(contacts, contact)
+        }</span>
+
+        <span class="cov8" title="1">return contacts</span>
+}
+
+// Len return the size of the bucket
+func (bucket *bucket) Len() int <span class="cov8" title="1">{
+        return bucket.list.Len()
+}</pre>
+		
+		<pre class="file" id="file1" style="display: none">package d7024e
+
+import (
+        "fmt"
+        "sort"
+)
+
+// Contact definition
+// stores the KademliaID, the ip address and the distance
+type Contact struct {
+        ID       *KademliaID
+        Address  string
+        distance *KademliaID
+}
+
+// NewContact returns a new instance of a Contact
+func NewContact(id *KademliaID, address string) Contact <span class="cov8" title="1">{
+        return Contact{id, address, nil}
+}</span>
+
+// CalcDistance calculates the distance to the target and 
+// fills the contacts distance field
+func (contact *Contact) CalcDistance(target *KademliaID) <span class="cov8" title="1">{
+        contact.distance = contact.ID.CalcDistance(target)
+}</span>
+
+// Less returns true if contact.distance &lt; otherContact.distance
+func (contact *Contact) Less(otherContact *Contact) bool <span class="cov8" title="1">{
+        return contact.distance.Less(otherContact.distance)
+}</span>
+
+// String returns a simple string representation of a Contact
+func (contact *Contact) String() string <span class="cov8" title="1">{
+        return fmt.Sprintf(`contact("%s", "%s")`, contact.ID, contact.Address)
+}</span>
+// ContactCandidates definition
+// stores an array of Contacts
+type ContactCandidates struct {
+        contacts []Contact
+}
+
+// Append an array of Contacts to the ContactCandidates
+func (candidates *ContactCandidates) Append(contacts []Contact) <span class="cov8" title="1">{
+        candidates.contacts = append(candidates.contacts, contacts...)
+}</span>
+
+// GetContacts returns the first count number of Contacts
+func (candidates *ContactCandidates) GetContacts(count int) []Contact <span class="cov8" title="1">{
+        return candidates.contacts[:count]
+}</span>
+
+// Sort the Contacts in ContactCandidates
+func (candidates *ContactCandidates) Sort() <span class="cov8" title="1">{
+        sort.Sort(candidates)
+}</span>
+
+// Len returns the length of the ContactCandidates
+func (candidates *ContactCandidates) Len() int <span class="cov8" title="1">{
+        return len(candidates.contacts)
+}</span>
+
+// Swap the position of the Contacts at i and j
+// WARNING does not check if either i or j is within range
+func (candidates *ContactCandidates) Swap(i, j int) <span class="cov8" title="1">{
+        candidates.contacts[i], candidates.contacts[j] = candidates.contacts[j], candidates.contacts[i]
+}</span>
+
+// Less returns true if the Contact at index i is smaller than 
+// the Contact at index j
+func (candidates *ContactCandidates) Less(i, j int) bool <span class="cov8" title="1">{
+        return candidates.contacts[i].Less(&amp;candidates.contacts[j])
+}</span>
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package d7024e
+
+import(
+        "fmt"
+        "time"
+)
+type Kademlia struct {
+        rt RoutingTable
+        net *Network
+        alpha int
+        keys []string
+}
+
+/*
+ * Creates and returns a new instance of a kademlia.
+ * 
+ */
+func NewKademlia(rt RoutingTable, net *Network) *Kademlia <span class="cov8" title="1">{
+        kademlia := &amp;Kademlia{}
+        kademlia.rt = rt
+        kademlia.alpha = 3
+        kademlia.net = net
+        kademlia.keys = []string{}
+        return kademlia
+}</span>
+
+/*
+ * LookupContact takes a target contact as an argument and finds
+ * the closest nodes to it by traversing through the network.
+ * 
+ */
+func (kademlia *Kademlia) LookupContact(target *Contact) []Contact <span class="cov0" title="0">{
+        var shortlist ContactCandidates
+        shortlist.contacts = kademlia.rt.FindClosestContacts(target.ID, kademlia.alpha)
+        closestNode := shortlist.contacts[0]
+        var visited []Contact
+        for _, contact := range shortlist.contacts </span><span class="cov0" title="0">{
+                if(!Contains(visited, contact))</span><span class="cov0" title="0">{
+                        kademlia.net.CreateRPC("ping", &amp;contact, "", []Contact{}, "", "")
+                        var pong string
+                        pong = &lt;- kademlia.net.pongChannel 
+                        if(pong == "pong")</span><span class="cov0" title="0">{
+                                kademlia.net.CreateRPC("FIND_NODE", &amp;contact, target.ID.String(), []Contact{}, "", "")
+                                visited = append(visited, contact)
+                                var k_triples []Contact
+                                k_triples = &lt;- kademlia.net.c
+                                for _, s := range k_triples</span><span class="cov0" title="0">{
+                                        s.CalcDistance(target.ID) 
+                                        shortlist.contacts = append(shortlist.contacts, s)
+                                        if(s.Less(&amp;closestNode))</span><span class="cov0" title="0">{
+                                                closestNode = s
+                                        }</span>
+                                }
+                        }
+                }
+        }
+        <span class="cov0" title="0">shortlist.Sort()
+        if(shortlist.Len() &lt; 3)</span><span class="cov0" title="0">{
+                return shortlist.contacts
+        }</span>else<span class="cov0" title="0">{
+                return shortlist.contacts[:3]
+        }</span>
+}
+
+/*
+ * LookupData takes a hash as an argument and tries to find the 
+ * corresponding value by looking through the contacts.
+ * If no value is found the K closest contacts are returned instead.
+ * 
+ */
+func (kademlia *Kademlia) LookupData(hash string) []string <span class="cov0" title="0">{
+        var shortlist ContactCandidates
+        target := NewContact(NewKademliaID(hash), "")
+        shortlist.contacts = kademlia.rt.FindClosestContacts(target.ID, kademlia.alpha)
+        var value, sender string
+        var k_triples []Contact
+        var visited ContactCandidates
+        counter := 0
+        for len(shortlist.contacts) &gt; 0 </span><span class="cov0" title="0">{
+                kademlia.net.CreateRPC("FIND_VALUE", &amp;shortlist.contacts[0], "", []Contact{}, hash, "")
+                value = &lt;- kademlia.net.findValueChannel
+                sender = &lt;- kademlia.net.senderChannel
+                if value != "nil" </span><span class="cov0" title="0">{
+                        return []string{value, sender}
+                }</span>
+                <span class="cov0" title="0">k_triples = &lt;- kademlia.net.c
+                UpdateShortlist(k_triples, &amp;shortlist, &amp;visited, &amp;target)
+                counter += 1</span>
+        }
+        <span class="cov0" title="0">visited.Sort()
+        var result []string
+        for i, contact := range visited.contacts </span><span class="cov0" title="0">{
+                if i &lt; 3 </span><span class="cov0" title="0">{
+                        result = append(result, contact.String())
+                }</span>
+        }
+        <span class="cov0" title="0">return result</span>
+}
+
+/*
+ * Function used by LookupData to update the shortlist used in
+ * the search.
+ * 
+ */
+func UpdateShortlist(k_triples []Contact, shortlist *ContactCandidates, visited *ContactCandidates, target *Contact) <span class="cov8" title="1">{
+        visited.contacts = append(visited.contacts, shortlist.contacts[0])
+        for _, s := range k_triples</span><span class="cov8" title="1">{
+                if(!Contains(visited.contacts, s) &amp;&amp; !Contains(shortlist.contacts, s)) </span><span class="cov8" title="1">{
+                        s.CalcDistance(target.ID)
+                        shortlist.contacts = append(shortlist.contacts, s)
+                }</span>
+        }
+        <span class="cov8" title="1">if len(shortlist.contacts) == 1 </span><span class="cov8" title="1">{
+                shortlist.contacts = []Contact{}
+        }</span> else<span class="cov8" title="1"> {
+                shortlist.contacts = shortlist.contacts[1:]
+        }</span>
+}
+
+/*
+ * Tries to store the wanted key and value pair on the contacts closest
+ * to the key hash.
+ * 
+ */
+func (kademlia *Kademlia) Store(key *KademliaID, value string) bool <span class="cov0" title="0">{
+        target := NewContact(key, "")
+        contacts := kademlia.LookupContact(&amp;target)
+        var response bool
+        successful := false
+        for _, contact := range contacts</span><span class="cov0" title="0">{
+                kademlia.net.CreateRPC("STORE", &amp;contact, "", []Contact{}, key.String(), value)
+                response = &lt;- kademlia.net.storeChannel
+                if(response)</span><span class="cov0" title="0">{
+                        fmt.Println("Store completed")
+                        if (!ContainsString(kademlia.keys, key.String())) </span><span class="cov0" title="0">{
+                                kademlia.keys = append(kademlia.keys, key.String())
+                        }</span>
+                        <span class="cov0" title="0">go kademlia.UpdateTTL(contact, key.String())
+                        successful = true</span>
+                }else<span class="cov0" title="0">{
+                        fmt.Println("Store failed")
+                }</span>
+        }
+        <span class="cov0" title="0">return successful</span>
+}
+
+/*
+ * updateTTL is called from Store asynchronously. It updates the TTL
+ * on the keys present in the key array of the kademlia.
+ * 
+ */
+ func (kademlia *Kademlia) UpdateTTL(contact Contact, key string)<span class="cov0" title="0">{
+        for _ = range time.Tick(time.Second * 5) </span><span class="cov0" title="0">{
+                if ContainsString(kademlia.keys, key) </span><span class="cov0" title="0">{
+                        kademlia.net.CreateRPC("ping", &amp;contact, "", []Contact{}, "", "")
+                        var pong string
+                        pong = &lt;- kademlia.net.pongChannel 
+                        if(pong == "pong")</span><span class="cov0" title="0">{
+                                kademlia.net.CreateRPC("UPDATE_TTL", &amp;contact, "", []Contact{}, key, "")
+                        }</span>
+                }
+        }
+        
+}
+
+/*
+ * Function called when the forget CLI command is executed. 
+ * Removes the corresponding key from the kademlia key array
+ * which stops its TTL from refreshing.
+ * 
+ */
+func (kademlia *Kademlia) Forget(key string)<span class="cov8" title="1">{
+        for i, a := range kademlia.keys </span><span class="cov8" title="1">{
+                if a == key</span><span class="cov8" title="1">{
+                        kademlia.keys[i] = kademlia.keys[len(kademlia.keys)-1]
+                    kademlia.keys = kademlia.keys[:len(kademlia.keys)-1]
+                        fmt.Println("Removing key: " , a)
+                }</span>
+        }
+}
+
+/*
+ * Checks if a contact is present in a contact array.
+ * 
+ */
+func Contains(visited []Contact, contact Contact) bool <span class="cov8" title="1">{
+        for _, a := range visited </span><span class="cov8" title="1">{
+           if a.ID.Equals(contact.ID)</span><span class="cov8" title="1">{
+                  return true
+           }</span>
+        }
+        <span class="cov8" title="1">return false</span>
+}
+
+/*
+ * Checks if a string is present in a string array.
+ * 
+ */
+func ContainsString(visited []string, key string) bool <span class="cov8" title="1">{
+        for _, a := range visited </span><span class="cov8" title="1">{
+           if a == key</span><span class="cov8" title="1">{
+                  return true
+           }</span>
+        }
+        <span class="cov8" title="1">return false</span>
+}</pre>
+		
+		<pre class="file" id="file3" style="display: none">package d7024e
+
+import (
+        "encoding/hex"
+        "math/rand"
+)
+
+// the static number of bytes in a KademliaID
+const IDLength = 20
+
+// type definition of a KademliaID
+type KademliaID [IDLength]byte
+
+// NewKademliaID returns a new instance of a KademliaID based on the string input
+func NewKademliaID(data string) *KademliaID <span class="cov8" title="1">{
+        if len(data) &lt; 40</span><span class="cov8" title="1">{
+                appendLength := 40 - len(data)
+                for i := 0; i &lt; appendLength; i++</span><span class="cov8" title="1">{
+                        data += "0"
+                }</span>
+        }
+        <span class="cov8" title="1">decoded, _ := hex.DecodeString(data)
+        newKademliaID := KademliaID{}
+        for i := 0; i &lt; IDLength; i++ </span><span class="cov8" title="1">{
+                newKademliaID[i] = decoded[i]
+        }</span>
+
+        <span class="cov8" title="1">return &amp;newKademliaID</span>
+}
+
+// NewRandomKademliaID returns a new instance of a random KademliaID,
+// change this to a better version if you like
+func NewRandomKademliaID() *KademliaID <span class="cov8" title="1">{
+        newKademliaID := KademliaID{}
+        //rand.Seed(time.Now().UnixNano())
+        for i := 0; i &lt; IDLength; i++ </span><span class="cov8" title="1">{
+                newKademliaID[i] = uint8(rand.Intn(256))
+        }</span>
+        <span class="cov8" title="1">return &amp;newKademliaID</span>
+}
+
+// Less returns true if kademliaID &lt; otherKademliaID (bitwise)
+func (kademliaID KademliaID) Less(otherKademliaID *KademliaID) bool <span class="cov8" title="1">{
+        for i := 0; i &lt; IDLength; i++ </span><span class="cov8" title="1">{
+                if kademliaID[i] != otherKademliaID[i] </span><span class="cov8" title="1">{
+                        return kademliaID[i] &lt; otherKademliaID[i]
+                }</span>
+        }
+        <span class="cov8" title="1">return false</span>
+}
+
+// Equals returns true if kademliaID == otherKademliaID (bitwise)
+func (kademliaID KademliaID) Equals(otherKademliaID *KademliaID) bool <span class="cov8" title="1">{
+        for i := 0; i &lt; IDLength; i++ </span><span class="cov8" title="1">{
+                if kademliaID[i] != otherKademliaID[i] </span><span class="cov8" title="1">{
+                        return false
+                }</span>
+        }
+        <span class="cov8" title="1">return true</span>
+}
+
+// CalcDistance returns a new instance of a KademliaID that is built 
+// through a bitwise XOR operation betweeen kademliaID and target
+func (kademliaID KademliaID) CalcDistance(target *KademliaID) *KademliaID <span class="cov8" title="1">{
+        result := KademliaID{}
+        for i := 0; i &lt; IDLength; i++ </span><span class="cov8" title="1">{
+                result[i] = kademliaID[i] ^ target[i]
+        }</span>
+        <span class="cov8" title="1">return &amp;result</span>
+}
+
+// String returns a simple string representation of a KademliaID
+func (kademliaID *KademliaID) String() string <span class="cov8" title="1">{
+        return hex.EncodeToString(kademliaID[0:IDLength])
+}</span>
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package d7024e
+
+/* Some of the functionality in the listen and createRPC functions are inspired by this site:
+https://github.com/holwech/UDP-module/blob/e03eccee9bfb5585d2c27c7e153fef273285099c/communication.go#L15 */
+
+import (
+        "encoding/json"
+        "fmt"
+        "net"
+        "sync"
+        "time"
+)
+
+const TTL = 20
+
+type Network struct {
+        contact *Contact
+        rt *RoutingTable
+        c chan []Contact
+        pongChannel chan string
+        data []Data
+        storeChannel chan bool
+        findValueChannel chan string
+        senderChannel chan string
+        mu sync.Mutex
+}
+
+type Message struct {
+        Sender Contact
+        Receiver Contact
+        RPC string
+        TargetID string
+        Contacts []Contact
+        Key string
+        Value string
+}
+
+type Data struct{
+        key string
+        value string
+        lastAccess int64
+}
+
+/*
+ * Creates and return a new instance of a network.
+ * 
+ */
+func NewNetwork(contact *Contact, rt *RoutingTable) *Network <span class="cov8" title="1">{
+        network := &amp;Network{}
+        network.contact = contact
+        network.rt = rt
+        network.c = make(chan []Contact)
+        network.pongChannel = make(chan string)
+        network.storeChannel = make(chan bool)
+        network.findValueChannel = make(chan string)
+        network.senderChannel = make(chan string)
+        return network
+}</span>
+
+/*
+ * Listening function that takes a port as argument. It sets up a
+ * listening connection on the local IP address from the port.
+ * Handles the incoming messages and sends the corresponding RPC:s.
+ * 
+ */
+func (network *Network) Listen(port string) <span class="cov0" title="0">{
+        localAddress, err := net.ResolveUDPAddr("udp", GetLocalIP()+":"+port)
+        if err != nil </span><span class="cov0" title="0">{
+                fmt.Println(err)
+        }</span>
+
+        <span class="cov0" title="0">connection, err := net.ListenUDP("udp", localAddress)
+        if err != nil </span><span class="cov0" title="0">{
+                fmt.Println(err)
+        }</span>
+
+        <span class="cov0" title="0">defer func(connection *net.UDPConn) </span><span class="cov0" title="0">{
+                err := connection.Close()
+                if err != nil </span><span class="cov0" title="0">{
+                        fmt.Println(err)
+                }</span>
+        }(connection)
+
+        <span class="cov0" title="0">for </span><span class="cov0" title="0">{
+                var message Message
+                buffer := make([]byte, 4096*2)
+                
+                length, _, err := connection.ReadFromUDP(buffer)
+
+                if err != nil </span><span class="cov0" title="0">{
+                        fmt.Println("error in listen")
+                }</span>
+
+                <span class="cov0" title="0">buffer = buffer[:length]
+                err = json.Unmarshal(buffer, &amp;message)
+                network.PickRPC(message)</span>
+
+        }
+}
+
+/*
+ * Takes a message as argument and takes different actions based
+ * on the wanted RPC type. Creates RPC:s, sends values over the channels, etc.
+ * 
+ */
+func (network *Network) PickRPC(message Message)<span class="cov0" title="0">{
+        RPC := message.RPC
+        switch </span>{
+        case RPC == "ping":<span class="cov0" title="0">
+                fmt.Println("received ping from "+ message.Sender.Address)
+                network.rt.AddContact(message.Sender)
+                network.CreateRPC("pong", &amp;message.Sender, "", []Contact{}, "", "")</span>
+        case RPC == "pong":<span class="cov0" title="0">
+                fmt.Println("received pong from "+ message.Sender.Address)
+                network.rt.AddContact(message.Sender)
+                network.pongChannel &lt;- "pong"</span>
+        case RPC == "FIND_NODE":<span class="cov0" title="0">
+                fmt.Println("received FIND_NODE from "+ message.Sender.Address)
+                k_contacts := network.rt.FindClosestContacts(NewKademliaID(message.TargetID), 3)
+                network.CreateRPC("FIND_NODE_RETURN", &amp;message.Sender, "", k_contacts, "", "")</span>
+        case RPC == "FIND_NODE_RETURN":<span class="cov0" title="0">
+                fmt.Println("received FIND_NODE_RETURN from "+ message.Sender.Address)
+                network.c &lt;- message.Contacts</span>
+        case RPC == "STORE":<span class="cov0" title="0">
+                fmt.Println("received STORE from "+ message.Sender.Address)
+                if !network.Contains(message.Key)</span><span class="cov0" title="0">{
+                        network.AddData(message.Key, message.Value)
+                        network.CreateRPC("STORE_RETURN", &amp;message.Sender, "", []Contact{}, message.Key, message.Value)
+                }</span>else<span class="cov0" title="0">{
+                        network.CreateRPC("STORE_RETURN_FAIL", &amp;message.Sender, "", []Contact{}, "", "")
+                }</span>
+        case RPC == "STORE_RETURN":<span class="cov0" title="0">
+                network.storeChannel &lt;- true</span>
+        case RPC == "STORE_RETURN_FAIL":<span class="cov0" title="0">
+                network.storeChannel &lt;- false</span>
+        case RPC == "FIND_VALUE":<span class="cov0" title="0">
+                fmt.Println("received FIND_VALUE from "+ message.Sender.Address)
+                if len(network.data) == 0 </span><span class="cov0" title="0">{
+                        network.CreateRPC("FIND_VALUE_RETURN_NIL", &amp;message.Sender, "", []Contact{}, "", "")
+                        kContacts := network.rt.FindClosestContacts(NewKademliaID(message.Key), 3)
+                        network.CreateRPC("FIND_NODE_RETURN", &amp;message.Sender, "", kContacts, "", "")
+                }</span> else<span class="cov0" title="0"> {
+                        for i, s := range network.data</span><span class="cov0" title="0">{
+                                if s.key == message.Key </span><span class="cov0" title="0">{
+                                        network.data[i].lastAccess = time.Now().Unix()
+                                        fmt.Println("Updating TTL: ", time.Now().Unix())
+                                        network.CreateRPC("FIND_VALUE_RETURN", &amp;message.Sender, "", []Contact{}, "", s.value)
+                                }</span> else<span class="cov0" title="0"> {
+                                        kContacts := network.rt.FindClosestContacts(NewKademliaID(message.Key), 3)
+                                        network.CreateRPC("FIND_VALUE_RETURN_NIL", &amp;message.Sender, "", []Contact{}, "", "")
+                                        network.CreateRPC("FIND_NODE_RETURN", &amp;message.Sender, "", kContacts, "", "")
+                                }</span>
+                        }
+                }
+        case RPC == "FIND_VALUE_RETURN":<span class="cov0" title="0">
+                fmt.Println("received FIND_VALUE_RETURN from "+ message.Sender.Address)
+                network.findValueChannel &lt;- message.Value
+                network.senderChannel &lt;- message.Sender.String()</span>
+        case RPC == "FIND_VALUE_RETURN_NIL":<span class="cov0" title="0">
+                fmt.Println("received FIND_VALUE_RETURN_NIL from "+ message.Sender.Address)
+                network.findValueChannel &lt;- "nil"
+                network.senderChannel &lt;- "nil"</span>
+        case RPC == "UPDATE_TTL":<span class="cov0" title="0">
+                fmt.Println("Recieved UPDATE_TTL from: ", message.Sender.Address)
+                for i, s := range network.data</span><span class="cov0" title="0">{
+                        if s.key == message.Key</span><span class="cov0" title="0">{
+                                network.data[i].lastAccess = time.Now().Unix()
+                                fmt.Println("Updating TTL: ", time.Now().Unix())
+                        }</span>
+                }
+        default:<span class="cov0" title="0">
+                fmt.Println("Invalid RPC")</span>
+        }
+}
+
+/*
+ * Creates a RPC based on the incoming arguments. This process is 
+ * incapsuled with a mutex lock to prevent it from trying to
+ * create a connection that already exists.
+ * 
+ */
+func (network *Network) CreateRPC(rpc string, receiver *Contact, targetID string, contacts []Contact, key string, value string) <span class="cov0" title="0">{
+        network.mu.Lock()
+        contactAddress, _ := net.ResolveUDPAddr("udp", receiver.Address)
+        fmt.Println("Sending " + rpc + " to: " , contactAddress)
+        localAddress, _ := net.ResolveUDPAddr("udp", GetLocalIP()+":80")
+        connection, err := net.DialUDP("udp", localAddress, contactAddress)
+        
+        if err != nil</span><span class="cov0" title="0">{
+                fmt.Println(err)
+        }</span>
+        
+        <span class="cov0" title="0">defer func(connection *net.UDPConn) </span><span class="cov0" title="0">{
+                err := connection.Close()
+                if err != nil </span><span class="cov0" title="0">{
+                        fmt.Println(err)
+                }</span>
+        }(connection)
+
+        <span class="cov0" title="0">connection.Write(network.CreateMessage(rpc, receiver, targetID, contacts, key, value))
+        network.mu.Unlock()</span>
+}
+
+/*
+ * Function used by createRPC. Takes the same arguments and returns the
+ * message in the form of a []byte.
+ * 
+ */
+func (network *Network) CreateMessage(rpc string, receiver *Contact, targetID string, contacts []Contact, key string, value string) []byte<span class="cov8" title="1">{
+        message := &amp;Message{}
+        message.Key = key
+        message.Value = value
+        message.Sender = *network.contact
+        message.Receiver = *receiver
+        message.RPC = rpc
+        message.TargetID = targetID
+        message.Contacts = contacts
+
+        convMsg, _ := json.Marshal(message)
+
+        return convMsg
+}</span>
+
+/*
+ * Function that returns the local IP address as a string.
+ * This function is copied from the following site:
+ * https://github.com/holwech/UDP-module/blob/e03eccee9bfb5585d2c27c7e153fef273285099c/communication.go#L15
+ */
+func GetLocalIP() string <span class="cov0" title="0">{
+        var localIP string
+        addr, err := net.InterfaceAddrs()
+        if err != nil </span><span class="cov0" title="0">{
+                fmt.Printf("GetLocalIP in communication failed")
+                return "localhost"
+        }</span>
+        <span class="cov0" title="0">for _, val := range addr </span><span class="cov0" title="0">{
+                if ip, ok := val.(*net.IPNet); ok &amp;&amp; !ip.IP.IsLoopback() </span><span class="cov0" title="0">{
+                        if ip.IP.To4() != nil </span><span class="cov0" title="0">{
+                                localIP = ip.IP.String()
+                        }</span>
+                }
+        }
+        <span class="cov0" title="0">return localIP</span>
+}
+
+/*
+ * Function called by addData asynchronously. Checks if the 
+ * data object is to be removed or not.
+ * 
+ */
+func (network *Network) CheckTTL(data *Data, TTL int)<span class="cov8" title="1">{
+        for now := range time.Tick(time.Second)</span><span class="cov8" title="1">{
+                index := DataGetIndex(network.data, data.key)
+                if now.Unix() - network.data[index].lastAccess &gt; int64(TTL)</span><span class="cov8" title="1">{
+                        if index != -1</span><span class="cov8" title="1">{
+                                network.data = Remove(network.data, index)
+                                fmt.Println("REMOVING OBJECT")
+                                break</span>
+                        }
+                }
+        }
+}
+
+/*
+ * Takes a key and value as arguments and add these to the data 
+ * array of the network. 
+ * 
+ */
+ func (network *Network) AddData(key string, value string) <span class="cov8" title="1">{
+        data := Data{}
+        data.key = key
+        data.value = value
+        data.lastAccess = time.Now().Unix()
+        network.data = append(network.data, data)
+        fmt.Println("Creating data TTL: ", data.lastAccess)
+        go network.CheckTTL(&amp;data, TTL)
+}</span>
+
+/*
+ * Returns the index of a key in a data array.
+ * 
+ */
+func DataGetIndex(data []Data, hash string) int <span class="cov8" title="1">{
+        for i, a := range data </span><span class="cov8" title="1">{
+                if a.key == hash </span><span class="cov8" title="1">{
+                        return i
+                }</span>
+        }
+        <span class="cov8" title="1">return -1</span>
+}
+
+/*
+ * Checks if a key is present in the data array of the network.
+ * 
+ */
+func (network *Network) Contains(key string) bool <span class="cov8" title="1">{
+        for _, s := range network.data</span><span class="cov8" title="1">{
+                if s.key == key </span><span class="cov8" title="1">{
+                        return true
+                }</span>
+        }
+        <span class="cov8" title="1">return false</span>
+}
+
+/*
+ * Removes the data at index i from the network and returns
+ * the new array.
+ * 
+ */
+func Remove(data []Data, i int) []Data<span class="cov8" title="1">{
+        if len(data) &gt; i &amp;&amp; i &gt; -1 </span><span class="cov8" title="1">{
+                data[i] = data[len(data)-1]
+                return data[:len(data)-1]
+        }</span>
+        <span class="cov8" title="1">return data</span>
+}</pre>
+		
+		<pre class="file" id="file5" style="display: none">package d7024e
+
+const bucketSize = 3
+
+
+// RoutingTable definition
+// keeps a refrence contact of me and an array of buckets
+type RoutingTable struct {
+        me      Contact
+        buckets [IDLength * 8]*bucket
+}
+
+// NewRoutingTable returns a new instance of a RoutingTable
+func NewRoutingTable(me Contact) *RoutingTable <span class="cov8" title="1">{
+        routingTable := &amp;RoutingTable{}
+        for i := 0; i &lt; IDLength*8; i++ </span><span class="cov8" title="1">{
+                routingTable.buckets[i] = NewBucket()
+        }</span>
+        /* fmt.Println("buckets looks like: ", routingTable.buckets[0].Len()) */
+        <span class="cov8" title="1">routingTable.me = me
+        return routingTable</span>
+}
+
+// AddContact add a new contact to the correct Bucket
+func (routingTable *RoutingTable) AddContact(contact Contact) <span class="cov8" title="1">{
+        bucketIndex := routingTable.GetBucketIndex(contact.ID)
+        bucket := routingTable.buckets[bucketIndex]
+        contact.CalcDistance(routingTable.me.ID)
+        bucket.AddContact(contact)
+}</span>
+
+// FindClosestContacts finds the count closest Contacts to the target in the RoutingTable
+func (routingTable *RoutingTable) FindClosestContacts(target *KademliaID, count int) []Contact <span class="cov8" title="1">{
+        var candidates ContactCandidates
+        bucketIndex := routingTable.GetBucketIndex(target)
+        bucket := routingTable.buckets[bucketIndex]
+
+        candidates.Append(bucket.GetContactAndCalcDistance(target))
+
+        for i := 1; (bucketIndex-i &gt;= 0 || bucketIndex+i &lt; IDLength*8) &amp;&amp; candidates.Len() &lt; count; i++ </span><span class="cov8" title="1">{
+                if bucketIndex-i &gt;= 0 </span><span class="cov8" title="1">{
+                        bucket = routingTable.buckets[bucketIndex-i]
+                        candidates.Append(bucket.GetContactAndCalcDistance(target))
+                }</span>
+                <span class="cov8" title="1">if bucketIndex+i &lt; IDLength*8 </span><span class="cov8" title="1">{
+                        bucket = routingTable.buckets[bucketIndex+i]
+                        candidates.Append(bucket.GetContactAndCalcDistance(target))
+                }</span>
+        }
+
+        <span class="cov8" title="1">candidates.Sort()
+
+        if count &gt; candidates.Len() </span><span class="cov8" title="1">{
+                count = candidates.Len()
+        }</span>
+
+        <span class="cov8" title="1">return candidates.GetContacts(count)</span>
+}
+
+// getBucketIndex get the correct Bucket index for the KademliaID
+func (routingTable *RoutingTable) GetBucketIndex(id *KademliaID) int <span class="cov8" title="1">{
+        distance := id.CalcDistance(routingTable.me.ID)
+        for i := 0; i &lt; IDLength; i++ </span><span class="cov8" title="1">{
+                for j := 0; j &lt; 8; j++ </span><span class="cov8" title="1">{
+                        if (distance[i]&gt;&gt;uint8(7-j))&amp;0x1 != 0 </span><span class="cov8" title="1">{
+                                return i*8 + j
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">return IDLength*8 - 1</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
